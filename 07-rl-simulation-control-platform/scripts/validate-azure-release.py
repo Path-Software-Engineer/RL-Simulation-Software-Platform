@@ -164,6 +164,10 @@ def main() -> None:
             'Read-RequiredSecret "NEON_DATABASE_URL"',
             'Read-RequiredSecret "NEON_DATABASE_URL_DIRECT"',
             'Read-RequiredSecret "OPERATOR_TOKEN"',
+            '"acr", "login"',
+            "docker build",
+            "docker push",
+            "--platform linux/amd64",
             '"containerapp", "job", "start"',
             'Dockerfile = "infra/docker/gateway.Dockerfile"',
             '"--parameters", "infra/azure/workloads.bicepparam"',
@@ -179,6 +183,8 @@ def main() -> None:
     )
     if any(token in deploy for token in forbidden_secret_arguments):
         raise SystemExit("deployment secrets must not be passed through Azure CLI arguments")
+    if re.search(r'"acr",\s*"build"', deploy):
+        raise SystemExit("free-subscription releases must not depend on blocked ACR Tasks")
     require(
         cli_installer,
         (

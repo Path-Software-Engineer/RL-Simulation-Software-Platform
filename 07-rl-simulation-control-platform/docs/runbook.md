@@ -71,7 +71,8 @@ release evidence and must not be inferred from this tag.
 Follow [the Azure + Neon release guide](azure-neon-release.md). Cloud acceptance requires all of
 the following in one traceable run:
 
-- Bicep provisioning and five immutable ACR builds succeed from a clean Git commit.
+- Bicep provisioning plus five local Docker builds and immutable ACR pushes succeed from a clean
+  Git commit; the free-subscription path does not use ACR Tasks.
 - The migration Job reaches `Succeeded` through Neon's direct TLS endpoint.
 - API readiness confirms Neon and the same-replica transient Redis transport are reachable.
 - Public Web, API and OpenAPI routes use HTTPS; the run stream uses WSS.

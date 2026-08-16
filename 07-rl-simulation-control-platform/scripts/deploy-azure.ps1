@@ -170,13 +170,27 @@ if (-not $SkipFoundation) {
 }
 $Foundation = $FoundationJson | ConvertFrom-Json
 $RegistryName = $Foundation.registryName.value
+$RegistryServer = $Foundation.registryLoginServer.value
 $EnvironmentName = $Foundation.environmentName.value
 $PullIdentityName = $Foundation.pullIdentityName.value
-if (-not $RegistryName -or -not $EnvironmentName -or -not $PullIdentityName) {
+if (-not $RegistryName -or -not $RegistryServer -or -not $EnvironmentName -or -not $PullIdentityName) {
     throw "The foundation deployment did not return every required resource identity."
 }
 
 if (-not $SkipBuild) {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        throw "Docker is required to build release images locally."
+    }
+    docker info --format '{{.ServerVersion}}' 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker Desktop Linux engine is not ready."
+    }
+    Invoke-AzureCli @(
+        "acr", "login",
+        "--name", $RegistryName,
+        "--only-show-errors"
+    ) | Out-Host
+
     $Images = @(
         @{ Name = "control-api"; Dockerfile = "infra/docker/control-api.Dockerfile" },
         @{ Name = "rl-runner"; Dockerfile = "infra/docker/rl-runner.Dockerfile" },
@@ -185,15 +199,21 @@ if (-not $SkipBuild) {
         @{ Name = "gateway"; Dockerfile = "infra/docker/gateway.Dockerfile" }
     )
     foreach ($Image in $Images) {
-        Write-Host "Building ACR image: p7/$($Image.Name):$ImageTag" -ForegroundColor Cyan
-        Invoke-AzureCli @(
-            "acr", "build",
-            "--registry", $RegistryName,
-            "--image", "p7/$($Image.Name):$ImageTag",
-            "--file", $Image.Dockerfile,
-            "--only-show-errors",
-            "."
-        ) | Out-Host
+        $FullImage = "$RegistryServer/p7/$($Image.Name):$ImageTag"
+        Write-Host "Building local image: $FullImage" -ForegroundColor Cyan
+        docker build `
+            --platform linux/amd64 `
+            --file $Image.Dockerfile `
+            --tag $FullImage `
+            .
+        if ($LASTEXITCODE -ne 0) {
+            throw "Local Docker build failed for p7/$($Image.Name)."
+        }
+        Write-Host "Pushing immutable image: $FullImage" -ForegroundColor Cyan
+        docker push $FullImage
+        if ($LASTEXITCODE -ne 0) {
+            throw "Docker push failed for p7/$($Image.Name)."
+        }
     }
 }
 

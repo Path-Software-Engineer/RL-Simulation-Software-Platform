@@ -89,8 +89,9 @@ az account show --output table
 ```
 
 The script validates the CLI, subscription, clean Git state and secret shapes; compiles Bicep;
-provisions the zero-cost foundation; builds five immutable images; applies checksum-protected Neon
-migrations; and validates public HTTPS/WSS plus all three real product profiles.
+provisions the zero-cost foundation; builds five immutable Linux images with local Docker and pushes
+them to ACR without ACR Tasks; applies checksum-protected Neon migrations; and validates public
+HTTPS/WSS plus all three real product profiles.
 
 Successful output contains only public URLs and non-secret evidence:
 
