@@ -139,6 +139,8 @@ func knownMetric(metric string) bool {
 		"episode_reward": {}, "moving_average_reward": {}, "epsilon": {}, "loss": {},
 		"episode_steps": {}, "collisions": {}, "success_rate": {}, "action_up": {},
 		"action_right": {}, "action_down": {}, "action_left": {},
+		"training_examples": {}, "prediction_error": {}, "accumulated_error": {},
+		"rollout_risk": {},
 	}
 	_, ok := allowed[metric]
 	return ok

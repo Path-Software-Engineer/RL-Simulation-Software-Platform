@@ -52,3 +52,16 @@ policy intent. Color never carries meaning alone.
 - Training progress is a semantic progressbar backed by persisted episode count.
 - Responsive acceptance targets 375 px, 768 px, 1024 px and 1440 px with no horizontal page scroll.
 - Reduced-motion preferences disable progress and control transitions.
+
+## Sprint 3 world-model rollout viewer
+
+- Expected state uses green and predicted state uses amber, always paired with `E`/`P` labels,
+  coordinates and exact table values.
+- The rollout is a horizontally scrollable semantic list with stable button geometry and a table
+  fallback; selection changes border and background without scale transforms.
+- Step error and accumulated error share a series chart because both use Manhattan cell distance.
+- Risk cards name the omitted obstacle representation and autoregressive drift instead of implying
+  a safe or optimal plan.
+- The two comparison grids stay visible side by side at 375 px; higher-level cards stack at the
+  680 px and 980 px breakpoints.
+- Keyboard focus, reduced motion and non-color meaning remain mandatory.

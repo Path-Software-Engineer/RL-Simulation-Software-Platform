@@ -1,6 +1,6 @@
 {
   "asyncapi": "3.0.0",
-  "info": {"title": "RL Simulation Control Events", "version": "0.2.0"},
+  "info": {"title": "RL Simulation Control Events", "version": "0.3.0"},
   "servers": {"localRedis": {"host": "redis:6379", "protocol": "redis", "description": "Local Redis Streams boundary"}},
   "channels": {
     "commands": {"address": "rl.commands.v1", "messages": {"runRequested": {"$ref": "#/components/messages/runRequested"}, "pauseRequested": {"$ref": "#/components/messages/pauseRequested"}, "resumeRequested": {"$ref": "#/components/messages/resumeRequested"}, "cancelRequested": {"$ref": "#/components/messages/cancelRequested"}}},

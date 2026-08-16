@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -365,7 +366,10 @@ func (store *Store) listEpisodes(ctx context.Context, suffix string, args ...any
 func (store *Store) ListTransitions(ctx context.Context, episodeID string, query domain.TransitionQuery) ([]domain.Transition, error) {
 	rows, err := store.pool.Query(ctx, `
 		SELECT id, episode_id, step_index, state_row, state_column, action,
-		       next_state_row, next_state_column, reward, terminated, truncated, sampled_at
+		       next_state_row, next_state_column, reward, terminated, truncated, sampled_at,
+		       predicted_state_row, predicted_state_column,
+		       predicted_next_state_row, predicted_next_state_column,
+		       step_error, accumulated_error, model_version
 		FROM step_transitions
 		WHERE episode_id=$1 AND step_index > $2
 		ORDER BY step_index
@@ -377,8 +381,32 @@ func (store *Store) ListTransitions(ctx context.Context, episodeID string, query
 	items := make([]domain.Transition, 0)
 	for rows.Next() {
 		var item domain.Transition
-		if err := rows.Scan(&item.ID, &item.EpisodeID, &item.StepIndex, &item.State.Row, &item.State.Column, &item.Action, &item.NextState.Row, &item.NextState.Column, &item.Reward, &item.Terminated, &item.Truncated, &item.SampledAt); err != nil {
+		var predictedStateRow, predictedStateColumn sql.NullInt64
+		var predictedNextStateRow, predictedNextStateColumn sql.NullInt64
+		var stepError, accumulatedError sql.NullFloat64
+		var modelVersion sql.NullString
+		if err := rows.Scan(
+			&item.ID, &item.EpisodeID, &item.StepIndex, &item.State.Row, &item.State.Column,
+			&item.Action, &item.NextState.Row, &item.NextState.Column, &item.Reward,
+			&item.Terminated, &item.Truncated, &item.SampledAt,
+			&predictedStateRow, &predictedStateColumn,
+			&predictedNextStateRow, &predictedNextStateColumn,
+			&stepError, &accumulatedError, &modelVersion,
+		); err != nil {
 			return nil, fmt.Errorf("scan transition: %w", err)
+		}
+		if modelVersion.Valid {
+			predictedState := domain.Coordinate{
+				Row: int(predictedStateRow.Int64), Column: int(predictedStateColumn.Int64),
+			}
+			predictedNextState := domain.Coordinate{
+				Row: int(predictedNextStateRow.Int64), Column: int(predictedNextStateColumn.Int64),
+			}
+			item.PredictedState = &predictedState
+			item.PredictedNextState = &predictedNextState
+			item.StepError = &stepError.Float64
+			item.AccumulatedError = &accumulatedError.Float64
+			item.ModelVersion = &modelVersion.String
 		}
 		items = append(items, item)
 	}
@@ -616,15 +644,20 @@ func projectEpisode(ctx context.Context, tx pgx.Tx, message domain.MessageEnvelo
 		StartedAt      time.Time `json:"started_at"`
 		CompletedAt    time.Time `json:"completed_at"`
 		Transitions    []struct {
-			ID         string            `json:"id"`
-			StepIndex  int               `json:"step_index"`
-			State      domain.Coordinate `json:"state"`
-			Action     string            `json:"action"`
-			NextState  domain.Coordinate `json:"next_state"`
-			Reward     float64           `json:"reward"`
-			Terminated bool              `json:"terminated"`
-			Truncated  bool              `json:"truncated"`
-			SampledAt  time.Time         `json:"sampled_at"`
+			ID                 string             `json:"id"`
+			StepIndex          int                `json:"step_index"`
+			State              domain.Coordinate  `json:"state"`
+			Action             string             `json:"action"`
+			NextState          domain.Coordinate  `json:"next_state"`
+			Reward             float64            `json:"reward"`
+			Terminated         bool               `json:"terminated"`
+			Truncated          bool               `json:"truncated"`
+			SampledAt          time.Time          `json:"sampled_at"`
+			PredictedState     *domain.Coordinate `json:"predicted_state"`
+			PredictedNextState *domain.Coordinate `json:"predicted_next_state"`
+			StepError          *float64           `json:"step_error"`
+			AccumulatedError   *float64           `json:"accumulated_error"`
+			ModelVersion       *string            `json:"model_version"`
 		} `json:"transitions"`
 	}
 	if err := json.Unmarshal(encoded, &payload); err != nil {
@@ -638,7 +671,37 @@ func projectEpisode(ctx context.Context, tx pgx.Tx, message domain.MessageEnvelo
 		return err
 	}
 	for _, transition := range payload.Transitions {
-		_, err = tx.Exec(ctx, `INSERT INTO step_transitions (id,episode_id,step_index,state_row,state_column,action,next_state_row,next_state_column,reward,terminated,truncated,sampled_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (episode_id,step_index) DO NOTHING`, transition.ID, payload.EpisodeID, transition.StepIndex, transition.State.Row, transition.State.Column, transition.Action, transition.NextState.Row, transition.NextState.Column, transition.Reward, transition.Terminated, transition.Truncated, transition.SampledAt)
+		worldModelFields := transition.ModelVersion != nil
+		completeWorldModelFields := transition.PredictedState != nil &&
+			transition.PredictedNextState != nil && transition.StepError != nil &&
+			transition.AccumulatedError != nil
+		if worldModelFields != completeWorldModelFields {
+			return fmt.Errorf("%w: incomplete world-model transition", domain.ErrInvalidArgument)
+		}
+		var predictedStateRow, predictedStateColumn any
+		var predictedNextStateRow, predictedNextStateColumn any
+		if worldModelFields {
+			predictedStateRow, predictedStateColumn = transition.PredictedState.Row, transition.PredictedState.Column
+			predictedNextStateRow, predictedNextStateColumn = transition.PredictedNextState.Row, transition.PredictedNextState.Column
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO step_transitions (
+			  id,episode_id,step_index,state_row,state_column,action,
+			  next_state_row,next_state_column,reward,terminated,truncated,sampled_at,
+			  predicted_state_row,predicted_state_column,
+			  predicted_next_state_row,predicted_next_state_column,
+			  step_error,accumulated_error,model_version
+			) VALUES (
+			  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19
+			) ON CONFLICT (episode_id,step_index) DO NOTHING`,
+			transition.ID, payload.EpisodeID, transition.StepIndex,
+			transition.State.Row, transition.State.Column, transition.Action,
+			transition.NextState.Row, transition.NextState.Column, transition.Reward,
+			transition.Terminated, transition.Truncated, transition.SampledAt,
+			predictedStateRow, predictedStateColumn,
+			predictedNextStateRow, predictedNextStateColumn,
+			transition.StepError, transition.AccumulatedError, transition.ModelVersion,
+		)
 		if err != nil {
 			return err
 		}

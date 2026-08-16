@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Environment, Episode, MetricSample, Policy, TrainingRun, Transition } from '~/types/api'
 import type { ActionSummary } from '~/utils/training'
+import { classifyRolloutRisk, summarizeRollout } from '~/utils/rollout'
 import { latestMetricSample as selectLatestMetric, metricPoints as selectMetricPoints, summarizeActions } from '~/utils/training'
 
 const DQN_EPISODES = 40
@@ -15,6 +16,12 @@ const trainingMetricNames = [
   'action_right',
   'action_down',
   'action_left'
+] as const
+const worldMetricNames = [
+  'training_examples',
+  'prediction_error',
+  'accumulated_error',
+  'rollout_risk'
 ] as const
 
 const api = useControlApi()
@@ -45,7 +52,10 @@ const isTerminal = computed(() => run.value ? ['succeeded', 'failed', 'cancelled
 const hasActiveRun = computed(() => Boolean(run.value && !isTerminal.value))
 const isDqnSelected = computed(() => policy.value?.algorithm === 'dqn')
 const isDqnRun = computed(() => runPolicy.value?.algorithm === 'dqn')
+const isWorldModelSelected = computed(() => policy.value?.algorithm === 'world-model')
+const isWorldModelRun = computed(() => runPolicy.value?.algorithm === 'world-model')
 const showTrainingDashboard = computed(() => isDqnRun.value || (!run.value && isDqnSelected.value))
+const showWorldModelDashboard = computed(() => isWorldModelRun.value || (!run.value && isWorldModelSelected.value))
 const canPause = computed(() => run.value?.status === 'running')
 const canResume = computed(() => run.value?.status === 'paused')
 const canCancel = computed(() => run.value && ['queued', 'running', 'pausing', 'paused'].includes(run.value.status))
@@ -59,6 +69,10 @@ const epsilonSeries = computed(() => [
 ])
 const lossSeries = computed(() => [
   { name: 'MSE loss', color: '#f08ba6', values: metricPoints('loss') }
+])
+const rolloutErrorSeries = computed(() => [
+  { name: 'Step error', color: '#f6c85f', values: metricPoints('prediction_error') },
+  { name: 'Accumulated error', color: '#f08ba6', values: metricPoints('accumulated_error') }
 ])
 const bestEpisode = computed(() => episodes.value.reduce<Episode | null>((best, item) => {
   if (!best || item.totalReward > best.totalReward) return item
@@ -76,7 +90,16 @@ const dominantAction = computed(() => actionDistribution.value.reduce<ActionSumm
   if (!best || item.value > best.value) return item
   return best
 }, null))
-const compactMetrics = computed(() => trainingMetricNames.map(name => ({ name, sample: latestMetricSample(name) })).filter(item => item.sample))
+const worldTransitions = computed(() => transitions.value.filter(item => item.predictedNextState && item.stepError !== undefined))
+const rolloutSummary = computed(() => summarizeRollout(worldTransitions.value))
+const trainingExamples = computed(() => latestMetric('training_examples'))
+const accumulatedError = computed(() => latestMetric('accumulated_error'))
+const rolloutRisk = computed(() => latestMetric('rollout_risk'))
+const riskLabel = computed(() => classifyRolloutRisk(rolloutRisk.value))
+const compactMetrics = computed(() => {
+  const names = isWorldModelRun.value ? worldMetricNames : trainingMetricNames
+  return names.map(name => ({ name, sample: latestMetricSample(name) })).filter(item => item.sample)
+})
 
 const { state: streamState, resync: resyncStream } = useRunStream(activeRunId, api.operatorToken, refreshRun)
 
@@ -137,7 +160,7 @@ async function loadWorkspace() {
     environments.value = environmentItems
     policies.value = policyItems
     selectedEnvironmentId.value ||= environmentItems[0]?.id ?? ''
-    selectedPolicyId.value ||= policyItems.find(item => item.algorithm === 'dqn')?.id ?? policyItems[0]?.id ?? ''
+    selectedPolicyId.value ||= policyItems.find(item => item.algorithm === 'world-model')?.id ?? policyItems[0]?.id ?? ''
     run.value = runPage.items[0] ?? null
     if (run.value) {
       selectedEnvironmentId.value = run.value.environmentId
@@ -166,8 +189,9 @@ async function refreshRun() {
     metrics.value = metricGroups.flat().sort((left, right) => left.step - right.step || left.metric.localeCompare(right.metric))
     const newestEpisode = episodeItems.at(-1)
     if (newestEpisode) {
+      const selectedStep = currentTransition.value?.stepIndex
       transitions.value = await api.listTransitions(newestEpisode.id)
-      currentTransition.value = transitions.value[0]
+      currentTransition.value = transitions.value.find(item => item.stepIndex === selectedStep) ?? transitions.value[0]
     } else {
       transitions.value = []
       currentTransition.value = undefined
@@ -234,19 +258,19 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
       <div class="brand"><span class="brand-mark" aria-hidden="true">V</span><div><strong>Vector</strong><small>RL evidence lab</small></div></div>
       <nav aria-label="Sprint navigation">
         <a href="#experiment"><span>01</span>Experiment</a>
-        <a href="#training" aria-current="page"><span>02</span>Training</a>
-        <a href="#episode"><span>03</span>Episode</a>
+        <a href="#model" aria-current="page"><span>02</span>World model</a>
+        <a href="#rollout"><span>03</span>Rollout</a>
         <a href="#evidence"><span>04</span>Evidence</a>
       </nav>
-      <div class="boundary-card"><p class="eyebrow">Evidence boundary</p><strong>Bounded DQN training</strong><small>Seeded profile, replay buffer and target network. No uploads or arbitrary Python.</small></div>
+      <div class="boundary-card"><p class="eyebrow">Evidence boundary</p><strong>Bounded transition model</strong><small>Twelve registered examples and one fixed rollout plan. No uploads, hidden planning or arbitrary Python.</small></div>
     </aside>
 
     <main id="main">
-      <header class="topbar"><div><small>PROJECT 07 / SPRINT 02</small><strong>DQN Training Dashboard</strong></div><div class="topbar-actions"><div class="topbar-state"><span :data-state="streamState" />{{ phase === 'locked' ? 'locked' : streamState }}</div><button v-if="phase !== 'locked'" class="text-button" type="button" @click="lockWorkspace">Lock</button></div></header>
+      <header class="topbar"><div><small>PROJECT 07 / SPRINT 03</small><strong>World Model Rollout Viewer</strong></div><div class="topbar-actions"><div class="topbar-state"><span :data-state="streamState" />{{ phase === 'locked' ? 'locked' : streamState }}</div><button v-if="phase !== 'locked'" class="text-button" type="button" @click="lockWorkspace">Lock</button></div></header>
 
-      <section id="experiment" class="hero dqn-hero">
-        <div><p class="eyebrow">Deep reinforcement learning observability</p><h1>Watch the network learn.<br><span>Question every curve.</span></h1><p class="hero-copy">Run a registered DQN profile, then inspect persisted reward, moving average, epsilon, loss, episode length, success rate and action balance.</p></div>
-        <div class="hero-orbit" aria-hidden="true"><i /><i /><b>DQN</b></div>
+      <section id="experiment" class="hero model-hero">
+        <div><p class="eyebrow">Model-based reinforcement learning observability</p><h1>See the imagined future.<br><span>Measure where it drifts.</span></h1><p class="hero-copy">Fit a registered empirical transition model, compare its autoregressive rollout with real Gridworld transitions and inspect error before trusting a plan.</p></div>
+        <div class="hero-orbit" aria-hidden="true"><i /><i /><b>WM</b></div>
       </section>
 
       <section v-if="error" class="notice error" role="alert"><strong>Vector could not complete the request.</strong><span>{{ error }}</span><button v-if="phase !== 'locked'" type="button" @click="loadWorkspace">Retry</button></section>
@@ -258,11 +282,11 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
 
       <template v-else-if="environment && policy">
         <section class="control-panel">
-          <div><p class="eyebrow">Controlled experiment</p><h2>Choose a registered agent.</h2><p>The DQN option executes the versioned 40-episode profile. Tabular Sprint 1 policies remain available for comparison.</p></div>
+          <div><p class="eyebrow">Controlled experiment</p><h2>Choose a registered execution profile.</h2><p>The world-model profile fits 12 transition examples and compares one fixed rollout with the real environment. DQN and tabular checkpoints remain available.</p></div>
           <div class="field-grid">
             <label>Environment<select v-model="selectedEnvironmentId" :disabled="phase === 'working' || hasActiveRun"><option v-for="item in environments" :key="item.id" :value="item.id">{{ item.name }} · v{{ item.version }}</option></select></label>
             <label>Agent profile<select v-model="selectedPolicyId" :disabled="phase === 'working' || hasActiveRun"><option v-for="item in policies" :key="item.id" :value="item.id">{{ item.algorithm }} · v{{ item.version }}</option></select></label>
-            <button class="button primary" type="button" :disabled="phase === 'working' || hasActiveRun" @click="startRun">{{ phase === 'working' ? 'Queueing run…' : hasActiveRun ? 'Training in progress' : isDqnSelected ? 'Start DQN training' : 'Run controlled episode' }} <span>→</span></button>
+            <button class="button primary" type="button" :disabled="phase === 'working' || hasActiveRun" @click="startRun">{{ phase === 'working' ? 'Queueing run…' : hasActiveRun ? 'Run in progress' : isWorldModelSelected ? 'Run model rollout' : isDqnSelected ? 'Start DQN training' : 'Run controlled episode' }} <span>→</span></button>
           </div>
         </section>
 
@@ -301,7 +325,31 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
           </article>
         </section>
 
-        <section v-if="evidencePolicy" id="episode" class="workspace-grid">
+        <section v-if="showWorldModelDashboard" id="model" class="world-model-dashboard" aria-labelledby="model-title">
+          <div class="dashboard-heading"><div><p class="eyebrow">Persisted model evidence</p><h2 id="model-title">Expected state versus imagined state</h2></div><div class="progress-copy"><strong>{{ worldTransitions.length }} / 11</strong><span>rollout steps persisted</span></div></div>
+
+          <div class="model-summary-grid">
+            <article><small>Transition dataset</small><strong>{{ trainingExamples?.toFixed(0) ?? '—' }}</strong><span>versioned examples</span></article>
+            <article><small>First divergence</small><strong>{{ rolloutSummary.firstDivergenceStep === undefined ? '—' : `step ${rolloutSummary.firstDivergenceStep}` }}</strong><span>expected ≠ predicted</span></article>
+            <article><small>Accumulated error</small><strong>{{ displayMetric(accumulatedError, 0) }}</strong><span>Manhattan cell distance</span></article>
+            <article><small>Planning risk</small><strong>{{ riskLabel }}</strong><span>{{ displayMetric(rolloutRisk, 3) }} mean error / step</span></article>
+          </div>
+
+          <div class="model-inspection-grid">
+            <article class="comparison-card"><div><p class="eyebrow">Next-state prediction</p><h3>Step {{ currentTransition ? currentTransition.stepIndex + 1 : '—' }} · {{ currentTransition?.action ?? 'awaiting rollout' }}</h3><p>Expected state comes from the real environment. Predicted state comes from the persisted empirical rollout.</p></div><WorldModelComparison :environment="environment" :transition="currentTransition" /></article>
+            <article class="chart-card"><div><p class="eyebrow">Error propagation</p><h3>Drift by rollout step</h3></div><MetricChart title="World-model error by rollout step" x-label="rollout step" y-label="cell error" :series="rolloutErrorSeries" /></article>
+          </div>
+
+          <div class="risk-grid">
+            <article><small>Observed obstacle collisions</small><strong>{{ latestEpisode?.collisions ?? '—' }}</strong><p>The model has no obstacle representation, so collision behavior is not learned.</p></article>
+            <article><small>Maximum step error</small><strong>{{ rolloutSummary.maximumStepError.toFixed(0) }} cells</strong><p>Exact Manhattan distance between the predicted and expected next states.</p></article>
+            <article><small>Planning limitation</small><strong>Open-loop drift</strong><p>Each prediction feeds the next prediction. Error can persist even when the real path recovers.</p></article>
+          </div>
+        </section>
+
+        <RolloutViewer v-if="isWorldModelRun && worldTransitions.length" id="rollout" :transitions="worldTransitions" @change="currentTransition = $event" />
+
+        <section v-if="evidencePolicy && !isWorldModelRun" id="episode" class="workspace-grid">
           <div class="grid-card"><div class="section-heading"><div><p class="eyebrow">Latest episode trace</p><h2>{{ environment.name }}</h2></div><span>{{ environment.rows }}×{{ environment.columns }}</span></div><GridworldGrid :environment="environment" :policy="evidencePolicy" :transition="currentTransition" /></div>
           <aside class="evidence-card">
             <p class="eyebrow">Episode evidence</p>
@@ -311,10 +359,10 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
           </aside>
         </section>
 
-        <EpisodePlayer v-if="transitions.length" :transitions="transitions" @change="currentTransition = $event" />
+        <EpisodePlayer v-if="transitions.length && !isWorldModelRun" :transitions="transitions" @change="currentTransition = $event" />
 
         <section id="evidence" class="evidence-grid">
-          <article><p class="eyebrow">Interpretation boundary</p><h3>Deep does not mean stable.</h3><p>Reward and loss describe this seeded teaching run. They do not establish convergence, generalization, robustness or real-world safety.</p></article>
+          <article><p class="eyebrow">Interpretation boundary</p><h3>{{ isWorldModelRun ? 'A rollout is not a safe plan.' : 'Deep does not mean stable.' }}</h3><p v-if="isWorldModelRun">The model omits obstacle structure and is evaluated on one registered action sequence. Completion does not establish planning reliability, generalization or safety.</p><p v-else>Reward and loss describe this seeded teaching run. They do not establish convergence, generalization, robustness or real-world safety.</p></article>
           <article><p class="eyebrow">Latest persisted samples</p><h3>{{ metrics.length }} metric points loaded</h3><ul><li v-for="item in compactMetrics" :key="item.name"><span>{{ item.name.replaceAll('_', ' ') }}</span><strong>{{ item.sample?.value.toFixed(3) }} {{ item.sample?.unit }}</strong></li></ul></article>
           <form v-if="latestEpisode" @submit.prevent="submitFeedback"><p class="eyebrow">Episode annotation</p><h3>Record human feedback.</h3><label>Category<select v-model="feedbackCategory"><option value="clear">Clear</option><option value="unexpected">Unexpected</option><option value="loop">Loop</option><option value="collision">Collision</option><option value="other">Other</option></select></label><label>Note<textarea v-model="feedbackNote" maxlength="500" required placeholder="What did you observe?" /></label><button class="button secondary" type="submit" :disabled="feedbackState === 'sending'">{{ feedbackState === 'sent' ? 'Feedback recorded' : 'Save annotation' }}</button></form>
         </section>

@@ -86,3 +86,27 @@ not confuse a completed teaching run with convergence or production readiness.
 
 **Acceptance criteria.** The UI and report state the seed, profile identity and non-convergence
 boundary.
+
+## US-P7-S3-001 — Compare predicted and expected next states
+
+**Story.** As an RL learner, I want the model prediction beside the real environment result so that
+I can see exactly where the learned transition rule fails.
+
+**Acceptance criteria.** Every world-model transition persists predicted and expected coordinates,
+model version, step error and accumulated error; the UI supplies labels and exact values.
+
+## US-P7-S3-002 — Inspect autoregressive rollout drift
+
+**Story.** As a technical reviewer, I want an ordered rollout sequence and error curve so that I can
+understand how one prediction becomes the input to the next.
+
+**Acceptance criteria.** The 11-step sequence is ordered, selectable by keyboard, backed by a data
+table and aligned with 11 samples for both prediction and accumulated error.
+
+## US-P7-S3-003 — Understand planning risk
+
+**Story.** As a portfolio reviewer, I want explicit risk and limitation cards so that rollout
+completion is not confused with a reliable or safe plan.
+
+**Acceptance criteria.** Cards identify obstacle omission, first divergence, maximum error and
+open-loop drift; the report retains the 9.00-cell negative result.

@@ -24,12 +24,20 @@
       "version": "1.0.0",
       "uri": "artifact://policies/dqn-gridworld-training-v1.json",
       "sha256": "99902302d7119e631c23d982eba7a06b0135718a81780caa55e68d0732dccac7"
+    },
+    {
+      "policyId": "22222222-2222-4222-8222-222222222204",
+      "algorithm": "world-model",
+      "version": "1.0.0",
+      "uri": "artifact://policies/world-model-gridworld-v1.json",
+      "sha256": "7b962a91ea1b9a833e1935413a9df2795b40c0533505a63d8487d16a193be8b2"
     }
   ],
-  "provenance": "Repository-authored deterministic policies and bounded DQN training profile.",
+  "provenance": "Repository-authored deterministic policies, bounded DQN profile and empirical transition model.",
   "limitations": [
     "Validated only in the registered 6x6 environment.",
     "The DQN profile trains a small seeded educational network; completion is not convergence.",
+    "The empirical world model omits obstacle structure so rollout error remains observable.",
     "Not evidence of generalization, safety or production readiness."
   ]
 }

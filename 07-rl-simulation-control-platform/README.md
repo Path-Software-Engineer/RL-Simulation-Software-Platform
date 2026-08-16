@@ -1,10 +1,11 @@
 # 07-rl-simulation-control-platform
 
-## Current implementation status — Sprint 2
+## Current implementation status — Sprint 3
 
 Sprint 1, **Gridworld Agent Visualizer**, is fixed at
-`v0.1.0-sprint-01-gridworld-agent-visualizer`. Sprint 2, **DQN Training Dashboard**, is implemented
-on `sprint/p7-s2-dqn-training-dashboard`. The active scope includes:
+`v0.1.0-sprint-01-gridworld-agent-visualizer`; Sprint 2, **DQN Training Dashboard**, is fixed at
+`v0.2.0-sprint-02-dqn-training-dashboard`. Sprint 3, **World Model Rollout Viewer**, is implemented
+on `sprint/p7-s3-world-model-rollout-viewer`. The active scope includes:
 
 - Nuxt/Vue workspace with an accessible Gridworld, policy overlay and episode player.
 - Go/Gin control API with local operator authentication, idempotency and bounded queries.
@@ -17,6 +18,11 @@ on `sprint/p7-s2-dqn-training-dashboard`. The active scope includes:
   telemetry persisted through Redis Streams into TimescaleDB.
 - A responsive Nuxt observatory with accessible SVG charts, exact data tables, progress, summary
   cards and action distribution.
+- A SHA-256-verified empirical action-delta model fitted from 12 versioned transition examples.
+- One 11-step autoregressive rollout compared against real Gridworld transitions, with predicted
+  states, per-step Manhattan error, accumulated error and risk metrics persisted end to end.
+- A responsive next-state comparison, horizontal rollout inspector, exact table, error chart and
+  planning-risk cards.
 
 The registered deterministic Q-Learning oracle reaches the goal in **10 transitions**, with
 **0 collisions** and **9.64 total reward**. This validates the controlled teaching fixture only;
@@ -37,7 +43,7 @@ Local routes:
 - API readiness: `http://127.0.0.1:8080/health/ready`
 - OpenAPI: `http://127.0.0.1:8080/openapi.json`
 
-See [Sprint 1 evidence](docs/sprints/sprint-01-gridworld-agent-visualizer/README.md),
+See [Sprint 3 evidence](docs/sprints/sprint-03-world-model-rollout-viewer/README.md),
 [architecture](docs/architecture/architecture.md), [runbook](docs/runbook.md),
 [user stories](docs/user-stories.md) and [technical stories](docs/technical-stories.md).
 
@@ -46,9 +52,14 @@ episode reward is **7.64**, final 10-episode moving average is **-33.13** and su
 **37.5%**. Those deliberately modest results demonstrate observability and instability; they do
 not establish convergence or generalization.
 
-> Evidence boundary: Sprint 1 is a tagged technical checkpoint. Sprint 2 static contracts,
-> artifact identity and direct DQN execution pass in the repository; the containerized gate, live
-> database smoke and visual review must pass before the Sprint 2 tag is created.
+The direct Sprint 3 profile uses 12 observed transitions and an 11-action plan. The real path
+reaches the goal with one obstacle collision, while the empirical model first diverges at step 2
+and accumulates **9.00 cells of Manhattan error**. This exposes a planning limitation; it is not
+evidence of reliable planning or generalization.
+
+> Evidence boundary: all three sprints are tagged technical checkpoints. The complete Sprint 3
+> containerized gate and three live cross-layer smokes passed on 2026-08-16. Independent browser
+> captures, Azure deployment and Neon connectivity are not included in that evidence.
 
 ---
 
@@ -792,10 +803,10 @@ Sin responsabilidades mezcladas
 
 # 🚀 Estado actual
 
-Sprint 1 y Sprint 2 están entregados como **checkpoints técnicos versionados**. Sprint 2 incorpora
-entrenamiento DQN real y acotado, 40 episodios, 400 métricas persistidas, contratos 0.2, migración
-0002, dashboard Nuxt accesible, smoke cross-layer y documentación explícita de inestabilidad. El
-gate containerizado completo pasó el 2026-08-16; no se archivó certificación visual independiente.
+Los tres sprints están entregados como **checkpoints técnicos versionados**. Sprint 3 incorpora
+artefacto empírico versionado, migración 0003, persistencia de estado predicho y error, contratos
+0.3, visor Nuxt y smoke cross-layer. El gate containerizado completo pasó el 2026-08-16; Azure y
+Neon pertenecen a la fase de release y no se atribuyen al tag técnico.
 
 ---
 
@@ -828,14 +839,15 @@ Tag técnico creado; certificación visual independiente no archivada
 ## Sprint 3
 
 ```txt
-Crear transition examples
-Crear next-state prediction viewer
-Crear rollout sequence
-Calcular error por paso
-Documentar error acumulado
-Crear planning risk cards
-Crear rollout viewer
-Documentar labs
+Transition examples versionados en artefacto SHA-256
+Next-state prediction viewer implementado
+Rollout sequence de 11 pasos implementada
+Error por paso y acumulado persistidos
+Planning risk cards derivadas de evidencia durable
+Rollout viewer y tabla accesible implementados
+Labs y ADR documentados
+Gate containerizado y tres smokes aprobados el 2026-08-16
+Tag técnico creado; Azure y Neon quedan para la rama release
 ```
 
 ---

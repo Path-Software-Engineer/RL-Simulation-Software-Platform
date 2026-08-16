@@ -11,17 +11,20 @@ from .environment import ACTIONS, Action, Coordinate
 Q_LEARNING_ID: Final[str] = "22222222-2222-4222-8222-222222222201"
 SARSA_ID: Final[str] = "22222222-2222-4222-8222-222222222202"
 DQN_ID: Final[str] = "22222222-2222-4222-8222-222222222203"
+WORLD_MODEL_ID: Final[str] = "22222222-2222-4222-8222-222222222204"
 
 EXPECTED_HASHES: Final[dict[str, str]] = {
     Q_LEARNING_ID: "22d5faf9a94fcd05fdf31d2a1429a1b8f02d4f394f6cb61b95cc26351060927f",
     SARSA_ID: "b7043771657ec37f235103485a7375a395431db0b2dc0e39d2070ca4e87aadcb",
     DQN_ID: "99902302d7119e631c23d982eba7a06b0135718a81780caa55e68d0732dccac7",
+    WORLD_MODEL_ID: "7b962a91ea1b9a833e1935413a9df2795b40c0533505a63d8487d16a193be8b2",
 }
 
 ARTIFACT_FILES: Final[dict[str, str]] = {
     Q_LEARNING_ID: "q-learning-gridworld-v1.json",
     SARSA_ID: "sarsa-gridworld-v1.json",
     DQN_ID: "dqn-gridworld-training-v1.json",
+    WORLD_MODEL_ID: "world-model-gridworld-v1.json",
 }
 
 
@@ -38,6 +41,7 @@ class PolicyArtifact:
     sha256: str
     action_by_state: dict[str, str]
     training_config: dict[str, Any] | None
+    world_model_config: dict[str, Any] | None
 
     def action_for(self, state: Coordinate) -> Action:
         value = self.action_by_state.get(state.key)
@@ -74,15 +78,18 @@ class PolicyRegistry:
         if tuple(raw.get("actionSpace", [])) != ACTIONS:
             raise PolicyValidationError("policy action space is incompatible")
         algorithm = str(raw.get("algorithm", ""))
-        if algorithm not in {"q-learning", "sarsa", "dqn"}:
+        if algorithm not in {"q-learning", "sarsa", "dqn", "world-model"}:
             raise PolicyValidationError("policy algorithm is not allowlisted")
         action_by_state = {
             str(key): str(value) for key, value in raw.get("actionByState", {}).items()
         }
         training_config = raw.get("training")
+        world_model_config = raw.get("worldModel")
         if algorithm == "dqn" and not isinstance(training_config, dict):
             raise PolicyValidationError("DQN training configuration is missing")
-        if algorithm != "dqn" and len(action_by_state) != 36:
+        if algorithm == "world-model" and not isinstance(world_model_config, dict):
+            raise PolicyValidationError("world-model configuration is missing")
+        if algorithm in {"q-learning", "sarsa"} and len(action_by_state) != 36:
             raise PolicyValidationError("tabular policy does not cover the registered state space")
 
         return PolicyArtifact(
@@ -93,4 +100,7 @@ class PolicyRegistry:
             sha256=actual_hash,
             action_by_state=action_by_state,
             training_config=training_config if isinstance(training_config, dict) else None,
+            world_model_config=(
+                world_model_config if isinstance(world_model_config, dict) else None
+            ),
         )

@@ -15,6 +15,6 @@ docker compose pull timescaledb redis migrate
 if ($LASTEXITCODE -ne 0) { throw "Pinned infrastructure images could not be pulled." }
 
 docker compose build control-api rl-runner web
-if ($LASTEXITCODE -ne 0) { throw "Sprint 1 application images could not be built." }
+if ($LASTEXITCODE -ne 0) { throw "Project 07 application images could not be built." }
 
-Write-Host "OK - Project 07 Sprint 1 dependencies and images are ready." -ForegroundColor Green
+Write-Host "OK - Project 07 Sprint 3 dependencies and images are ready." -ForegroundColor Green

@@ -27,7 +27,7 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-local_rl_password}
     volumes:
       - ./database/migrations:/migrations:ro
-    command: ["psql", "-h", "timescaledb", "-U", "${POSTGRES_USER:-rl_control}", "-d", "${POSTGRES_DB:-rl_control}", "-v", "ON_ERROR_STOP=1", "-f", "/migrations/0001_sprint_01_gridworld.up.sql", "-f", "/migrations/0002_sprint_02_dqn_dashboard.up.sql"]
+    command: ["psql", "-h", "timescaledb", "-U", "${POSTGRES_USER:-rl_control}", "-d", "${POSTGRES_DB:-rl_control}", "-v", "ON_ERROR_STOP=1", "-f", "/migrations/0001_sprint_01_gridworld.up.sql", "-f", "/migrations/0002_sprint_02_dqn_dashboard.up.sql", "-f", "/migrations/0003_sprint_03_world_model_rollout_viewer.up.sql"]
     restart: "no"
 
   redis:

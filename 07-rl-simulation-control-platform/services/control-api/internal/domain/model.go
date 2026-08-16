@@ -118,16 +118,21 @@ type Episode struct {
 }
 
 type Transition struct {
-	ID         string     `json:"id"`
-	EpisodeID  string     `json:"episodeId"`
-	StepIndex  int        `json:"stepIndex"`
-	State      Coordinate `json:"state"`
-	Action     string     `json:"action"`
-	NextState  Coordinate `json:"nextState"`
-	Reward     float64    `json:"reward"`
-	Terminated bool       `json:"terminated"`
-	Truncated  bool       `json:"truncated"`
-	SampledAt  time.Time  `json:"sampledAt"`
+	ID                 string      `json:"id"`
+	EpisodeID          string      `json:"episodeId"`
+	StepIndex          int         `json:"stepIndex"`
+	State              Coordinate  `json:"state"`
+	Action             string      `json:"action"`
+	NextState          Coordinate  `json:"nextState"`
+	Reward             float64     `json:"reward"`
+	Terminated         bool        `json:"terminated"`
+	Truncated          bool        `json:"truncated"`
+	SampledAt          time.Time   `json:"sampledAt"`
+	PredictedState     *Coordinate `json:"predictedState,omitempty"`
+	PredictedNextState *Coordinate `json:"predictedNextState,omitempty"`
+	StepError          *float64    `json:"stepError,omitempty"`
+	AccumulatedError   *float64    `json:"accumulatedError,omitempty"`
+	ModelVersion       *string     `json:"modelVersion,omitempty"`
 }
 
 type MetricSample struct {

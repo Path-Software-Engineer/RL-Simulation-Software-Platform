@@ -45,9 +45,14 @@ class Transition:
     terminated: bool
     truncated: bool
     sampled_at: str
+    predicted_state: Coordinate | None = None
+    predicted_next_state: Coordinate | None = None
+    step_error: float | None = None
+    accumulated_error: float | None = None
+    model_version: str | None = None
 
     def as_dict(self) -> dict[str, object]:
-        return {
+        value: dict[str, object] = {
             "id": str(uuid4()),
             "step_index": self.step_index,
             "state": self.state.as_dict(),
@@ -58,6 +63,17 @@ class Transition:
             "truncated": self.truncated,
             "sampled_at": self.sampled_at,
         }
+        if self.predicted_state is not None and self.predicted_next_state is not None:
+            value.update(
+                {
+                    "predicted_state": self.predicted_state.as_dict(),
+                    "predicted_next_state": self.predicted_next_state.as_dict(),
+                    "step_error": self.step_error,
+                    "accumulated_error": self.accumulated_error,
+                    "model_version": self.model_version,
+                }
+            )
+        return value
 
 
 @dataclass(frozen=True, slots=True)

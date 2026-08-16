@@ -107,3 +107,30 @@ Each chart series remains query-bounded as training history grows. **Evidence:**
 
 Quality gates reject non-finite metrics and documentation retains unstable results. **Evidence:**
 the direct 40-episode validator and controlled training report.
+
+## Sprint 3 technical stories
+
+### TS-P7-S3-001 — Version transition-model inputs
+
+Examples and rollout actions are content-addressed, bounded and allowlisted instead of supplied by
+the browser. **Evidence:** world-model artifact, manifest, registry validation and migration 0003.
+
+### TS-P7-S3-002 — Execute model and environment together
+
+The worker fits empirical action deltas and applies every planned action to both its predicted
+state and the real Gridworld. **Evidence:** `world_model.py`, direct validator and unit tests.
+
+### TS-P7-S3-003 — Preserve comparison evidence
+
+Nullable transition columns retain predicted states, model identity and errors without changing
+the original tabular/DQN response contract. **Evidence:** migration 0003, projector and OpenAPI 0.3.
+
+### TS-P7-S3-004 — Present accessible rollout risk
+
+The viewer combines labeled grids, semantic buttons, exact table values and an accessible error
+chart. **Evidence:** `WorldModelComparison.vue`, `RolloutViewer.vue` and responsive CSS.
+
+### TS-P7-S3-005 — Prove cross-layer regression safety
+
+The Sprint 3 gate executes the tabular, DQN and world-model smokes against the same Compose stack.
+**Evidence:** `direct-world-model-check.py`, `smoke-test-sprint-03.ps1` and quality gate.

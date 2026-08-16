@@ -2,7 +2,7 @@ package application
 
 import "testing"
 
-func TestKnownMetricIncludesSprintTwoTrainingSeries(t *testing.T) {
+func TestKnownMetricIncludesRegisteredEvidenceSeries(t *testing.T) {
 	metrics := []string{
 		"episode_reward",
 		"moving_average_reward",
@@ -15,6 +15,10 @@ func TestKnownMetricIncludesSprintTwoTrainingSeries(t *testing.T) {
 		"action_right",
 		"action_down",
 		"action_left",
+		"training_examples",
+		"prediction_error",
+		"accumulated_error",
+		"rollout_risk",
 	}
 	for _, metric := range metrics {
 		if !knownMetric(metric) {

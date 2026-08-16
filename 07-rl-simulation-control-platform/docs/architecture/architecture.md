@@ -52,3 +52,20 @@ Nuxt command → Go outbox → Redis command → bounded DQN worker
 ```
 
 See `ADR-003-bounded-dqn-training-and-observability.md` for the execution and evidence boundary.
+
+## Sprint 3 world-model flow
+
+The world-model artifact contains transition examples and a fixed action plan, never executable
+code. The worker fits an average displacement for each allowlisted action, generates an
+autoregressive prediction and executes the same action against the real Gridworld. Each projected
+transition stores both paths and their Manhattan error.
+
+```text
+versioned examples → empirical action deltas → predicted next state ─┐
+registered actions → real Gridworld step → expected next state ─────┼→ durable comparison
+                                                                    └→ error/risk metrics
+```
+
+Existing episode and transition resources remain authoritative. Migration 0003 adds nullable
+world-model fields so Sprint 1/2 evidence retains its original shape. See
+`ADR-004-empirical-world-model-and-rollout-error.md`.

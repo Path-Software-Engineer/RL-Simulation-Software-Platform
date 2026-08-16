@@ -31,7 +31,16 @@
           "reward": {"type": "number"},
           "terminated": {"type": "boolean"},
           "truncated": {"type": "boolean"},
-          "sampled_at": {"type": "string", "format": "date-time"}
+          "sampled_at": {"type": "string", "format": "date-time"},
+          "predicted_state": {"$ref": "#/$defs/coordinate"},
+          "predicted_next_state": {"$ref": "#/$defs/coordinate"},
+          "step_error": {"type": "number", "minimum": 0},
+          "accumulated_error": {"type": "number", "minimum": 0},
+          "model_version": {"type": "string", "minLength": 1}
+        },
+        "dependentRequired": {
+          "model_version": ["predicted_state", "predicted_next_state", "step_error", "accumulated_error"],
+          "predicted_state": ["model_version", "predicted_next_state", "step_error", "accumulated_error"]
         }
       }
     }

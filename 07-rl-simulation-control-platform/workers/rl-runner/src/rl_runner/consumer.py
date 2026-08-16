@@ -14,6 +14,7 @@ from .dqn import DQNConfig, train_dqn
 from .messages import MessageEnvelope, MessageValidationError, new_event
 from .policies import PolicyRegistry, PolicyValidationError
 from .runner import RunRequest, run_episode
+from .world_model import WorldModelConfig, run_world_model_rollout
 
 LOGGER = logging.getLogger("rl_runner")
 
@@ -123,6 +124,9 @@ class RunnerConsumer:
         if policy.algorithm == "dqn":
             self._execute_dqn(envelope, request, policy.training_config)
             return
+        if policy.algorithm == "world-model":
+            self._execute_world_model(envelope, request, policy.world_model_config)
+            return
         result = run_episode(request, policy, control=self._cooperative_control(envelope))
         self._publish(new_event(envelope, "rl.run.episode-completed.v1", result.as_payload()))
         metrics = (
@@ -184,6 +188,48 @@ class RunnerConsumer:
             ),
             on_episode=publish_episode,
         )
+        terminal_type = (
+            "rl.run.cancelled.v1"
+            if result.status == "cancelled"
+            else "rl.run.completed.v1"
+        )
+        self._publish(
+            new_event(
+                envelope,
+                terminal_type,
+                {"status": result.status, "terminal_reason": result.terminal_reason},
+            )
+        )
+
+    def _execute_world_model(
+        self,
+        envelope: MessageEnvelope,
+        request: RunRequest,
+        raw_config: dict[str, Any] | None,
+    ) -> None:
+        if raw_config is None:
+            raise ValueError("world-model configuration is missing")
+        result = run_world_model_rollout(
+            request,
+            WorldModelConfig.from_mapping(raw_config),
+            control=self._cooperative_control(envelope),
+        )
+        self._publish(
+            new_event(envelope, "rl.run.episode-completed.v1", result.episode.as_payload())
+        )
+        for metric in result.metrics:
+            self._publish(
+                new_event(
+                    envelope,
+                    "rl.run.metric-sampled.v1",
+                    {
+                        "metric": metric.metric,
+                        "value": metric.value,
+                        "unit": metric.unit,
+                        "step": metric.step,
+                    },
+                )
+            )
         terminal_type = (
             "rl.run.cancelled.v1"
             if result.status == "cancelled"

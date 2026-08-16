@@ -19,3 +19,16 @@ cloud bucket would not improve the accepted product flow.
 
 The AWS S3, GCP Storage and Azure Blob labs remain connection-ready roadmap items. No cloud log
 upload or provider deployment is claimed by this sprint.
+
+## Sprint 3 world-model labs
+
+- `tec-transition-dataset-card-lab`: 12 bounded examples inside a content-addressed artifact.
+- `tec-next-state-prediction-viewer-lab`: persisted expected/predicted coordinate comparison.
+- `tec-rollout-sequence-lab`: 11-step autoregressive model sequence against real environment steps.
+- `tec-error-comparison-lab`: Manhattan error per step with exact table values.
+- `tec-accumulated-error-notes-lab`: 9.00-cell controlled drift retained as negative evidence.
+- `tec-planning-risk-card-lab`: collision, maximum error and open-loop limitation cards.
+- `docs-world-model-storytelling-lab`: separates model execution from reliable planning.
+
+Azure Blob, AWS S3 and GCP Storage remain connection-ready roadmap labs. Sprint 3 creates no cloud
+resource and does not claim provider deployment.

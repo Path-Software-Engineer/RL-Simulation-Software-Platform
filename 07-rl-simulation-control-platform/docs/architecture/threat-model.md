@@ -12,7 +12,10 @@
 | Misleading live status | Experience | Socket carries notification only; every update resyncs from REST |
 | Secret disclosure | Runtime | Environment injection, structured logs and repository secret scan |
 | Unbounded compute | Runner | One registered environment, max 200 steps, one consumer, CPU/memory cap |
+| Model or rollout injection | Runner | Content-addressed examples and plan; browser supplies only registered UUID |
+| Fabricated model evidence | Product / persistence | Prediction and real transition are computed together and projected atomically |
 | Reward interpreted as safety | Product | Explicit evidence boundary in UI, docs and reports |
+| Rollout interpreted as a safe plan | Product | Error, obstacle omission and open-loop drift remain visible |
 
 Authentication is deliberately local and single-operator: it is not an identity provider, RBAC or
 production session service. The token must be changed outside source control, remains in browser

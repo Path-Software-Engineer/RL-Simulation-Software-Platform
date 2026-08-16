@@ -13,16 +13,20 @@ docker compose ps
 Every service must report healthy; `migrate` must report a successful completion. A started
 container is not sufficient acceptance.
 
-Sprint 2 acceptance runs both real flows:
+Current acceptance runs all three real product flows:
 
 ```powershell
 .\scripts\smoke-test.ps1
 .\scripts\smoke-test-sprint-02.ps1
+.\scripts\smoke-test-sprint-03.ps1
 ```
 
 The second flow may take about one minute with presentation delay enabled. It must finish with 40
 episodes, 400 metric samples, epsilon `1.0 → 0.05`, a non-empty action distribution and a consistent
 latest episode trace.
+
+The third flow must persist one 11-step rollout, expected and predicted state pairs, 11 samples for
+each error series, one training-example count and a final accumulated error of `9.0` cells.
 
 The OpenAPI document remains public locally, while every `/api/v1` route requires Bearer and the
 run WebSocket requires `rl-run-v1` plus the same operator token as its subprotocols.
@@ -57,3 +61,7 @@ automated and visual evidence pass may the release branch and tag be created.
 The Sprint 2 technical delivery tag is `v0.2.0-sprint-02-dqn-training-dashboard`. Its automated
 acceptance passed on 2026-08-16. Independent browser captures were not archived with that tag and
 must not be inferred from the containerized gate.
+
+The Sprint 3 technical delivery tag is `v0.3.0-sprint-03-world-model-rollout-viewer`. Its complete
+containerized gate passed on 2026-08-16. Azure deployment and Neon connectivity require separate
+release evidence and must not be inferred from this tag.

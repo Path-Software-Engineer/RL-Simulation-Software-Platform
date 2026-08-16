@@ -18,7 +18,7 @@ export interface Environment {
 
 export interface Policy {
   id: string
-  algorithm: 'q-learning' | 'sarsa' | 'dqn'
+  algorithm: 'q-learning' | 'sarsa' | 'dqn' | 'world-model'
   version: string
   artifactUri: string
   sha256: string
@@ -68,6 +68,11 @@ export interface Transition {
   terminated: boolean
   truncated: boolean
   sampledAt: string
+  predictedState?: Coordinate
+  predictedNextState?: Coordinate
+  stepError?: number
+  accumulatedError?: number
+  modelVersion?: string
 }
 
 export interface MetricSample {

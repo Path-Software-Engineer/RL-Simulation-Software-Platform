@@ -5,11 +5,12 @@ interface ChartSeries {
   values: Array<[number, number]>
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   yLabel: string
   series: ChartSeries[]
-}>()
+  xLabel?: string
+}>(), { xLabel: 'episode' })
 
 const width = 720
 const height = 250
@@ -46,12 +47,12 @@ function format(value: number) {
     <div class="chart-legend" aria-hidden="true">
       <span v-for="item in series" :key="item.name"><i :style="{ backgroundColor: item.color }" />{{ item.name }}</span>
     </div>
-    <svg :viewBox="`0 0 ${width} ${height}`" role="img" :aria-label="`${title}. ${yLabel} by episode.`">
+    <svg :viewBox="`0 0 ${width} ${height}`" role="img" :aria-label="`${title}. ${yLabel} by ${xLabel}.`">
       <g class="chart-grid">
         <line v-for="index in 5" :key="index" :x1="padding.left" :x2="width - padding.right" :y1="padding.top + (index - 1) * ((height - padding.top - padding.bottom) / 4)" :y2="padding.top + (index - 1) * ((height - padding.top - padding.bottom) / 4)" />
       </g>
-      <text class="axis-label" :x="padding.left" :y="height - 8">episode {{ xMin }}</text>
-      <text class="axis-label" text-anchor="end" :x="width - padding.right" :y="height - 8">episode {{ xMax }}</text>
+      <text class="axis-label" :x="padding.left" :y="height - 8">{{ xLabel }} {{ xMin }}</text>
+      <text class="axis-label" text-anchor="end" :x="width - padding.right" :y="height - 8">{{ xLabel }} {{ xMax }}</text>
       <text class="axis-label" :x="8" :y="padding.top + 4">{{ format(yMax) }}</text>
       <text class="axis-label" :x="8" :y="height - padding.bottom">{{ format(yMin) }}</text>
       <polyline v-for="item in series" :key="item.name" :points="polyline(item.values)" :stroke="item.color" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
@@ -60,7 +61,7 @@ function format(value: number) {
       <summary>View chart data table</summary>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Series</th><th>Episode</th><th>{{ yLabel }}</th></tr></thead>
+          <thead><tr><th>Series</th><th>{{ xLabel }}</th><th>{{ yLabel }}</th></tr></thead>
           <tbody>
             <template v-for="item in series" :key="item.name">
               <tr v-for="point in item.values" :key="`${item.name}-${point[0]}`"><td>{{ item.name }}</td><td>{{ point[0] }}</td><td>{{ format(point[1]) }}</td></tr>

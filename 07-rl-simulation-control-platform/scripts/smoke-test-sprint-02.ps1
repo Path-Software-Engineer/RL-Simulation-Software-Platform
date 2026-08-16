@@ -92,7 +92,7 @@ if ($Transitions.Count -ne $LatestEpisode.stepCount) {
 }
 
 $Web = Invoke-WebRequest -Uri $WebBaseUrl -UseBasicParsing -TimeoutSec 10
-if ($Web.StatusCode -ne 200 -or $Web.Content -notmatch "DQN Training Dashboard") {
+if ($Web.StatusCode -ne 200 -or $Web.Content -notmatch "World Model Rollout Viewer") {
     throw "The Sprint 2 Nuxt dashboard shell is not reachable."
 }
 

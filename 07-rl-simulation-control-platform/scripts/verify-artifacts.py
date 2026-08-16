@@ -49,6 +49,19 @@ def main() -> None:
             }
             if set(training) != required or not 1 <= training["episodes"] <= 100:
                 raise SystemExit(f"DQN training profile is invalid: {path.name}")
+        if payload["algorithm"] == "world-model":
+            model = payload.get("worldModel", {})
+            examples = model.get("trainingExamples", [])
+            rollout_actions = model.get("rolloutActions", [])
+            observed_actions = {item.get("action") for item in examples}
+            if (
+                model.get("modelType") != "empirical-action-delta"
+                or not 4 <= len(examples) <= 64
+                or observed_actions != {"up", "right", "down", "left"}
+                or not 1 <= len(rollout_actions) <= 64
+                or set(rollout_actions) - {"up", "right", "down", "left"}
+            ):
+                raise SystemExit(f"world-model profile is invalid: {path.name}")
     environment = ROOT / "artifacts/manifests/gridworld-environment-v1.json"
     if digest(environment) != "1b818490c0e1ab1b17753f0d089d547686035efb4c52f4e6bbbf0dfac23cbc43":
         raise SystemExit("environment manifest hash mismatch")

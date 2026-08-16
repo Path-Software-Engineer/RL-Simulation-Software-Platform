@@ -69,6 +69,8 @@ def main() -> None:
 
     require(openapi.get("openapi") == "3.1.0", "OpenAPI must remain at 3.1.0")
     require(asyncapi.get("asyncapi") == "3.0.0", "AsyncAPI must remain at 3.0.0")
+    require(openapi["info"]["version"] == "0.3.0", "OpenAPI Sprint 3 version is missing")
+    require(asyncapi["info"]["version"] == "0.3.0", "AsyncAPI Sprint 3 version is missing")
     validate_local_references(openapi)
     validate_local_references(asyncapi)
     require(
@@ -94,6 +96,24 @@ def main() -> None:
         "/ws/v1/runs/{id}",
     }
     require(required_paths <= set(openapi["paths"]), "OpenAPI is missing a Sprint 1 route")
+    policy_algorithms = set(
+        openapi["components"]["schemas"]["Policy"]["properties"]["algorithm"]["enum"]
+    )
+    require("world-model" in policy_algorithms, "world-model policy is not registered")
+    transition_properties = set(
+        openapi["components"]["schemas"]["Transition"]["properties"]
+    )
+    require(
+        {
+            "predictedState",
+            "predictedNextState",
+            "stepError",
+            "accumulatedError",
+            "modelVersion",
+        }
+        <= transition_properties,
+        "Sprint 3 transition evidence is missing",
+    )
     create_schema = openapi["components"]["schemas"]["CreateRunRequest"]
     require(validate_create_run(valid, create_schema), "valid HTTP example was rejected")
     require(
