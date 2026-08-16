@@ -129,6 +129,24 @@ def main() -> None:
             raise SystemExit(f"{path.name} must contain exactly one BEGIN statement")
         if len(re.findall(r"(?im)^\s*COMMIT;\s*$", sql)) != 1:
             raise SystemExit(f"{path.name} must contain exactly one COMMIT statement")
+    sprint_one = migrations[0].read_text(encoding="utf-8")
+    require(
+        sprint_one,
+        (
+            "SELECT create_hypertable",
+            "CREATE VIEW run_metric_hourly AS",
+            "CREATE TRIGGER metric_samples_retention",
+            "FOR EACH STATEMENT",
+        ),
+        "Apache-compatible Timescale migration",
+    )
+    restricted_timescale_features = (
+        "timescaledb.continuous",
+        "add_continuous_aggregate_policy",
+        "add_retention_policy",
+    )
+    if any(token in sprint_one for token in restricted_timescale_features):
+        raise SystemExit("Neon migrations must remain compatible with the Timescale Apache license")
 
     require(
         migration_image,

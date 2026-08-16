@@ -40,8 +40,9 @@ Implemented. **Evidence:** `artifacts/`, database seeds, `PolicyRegistry`.
 
 **Need.** Preserve ordered trajectory and sampled metrics without unbounded reads.
 
-**Acceptance.** Episode/transition constraints, Timescale hypertable, aggregate and retention policy
-are migrated; query limits are enforced. **State:** Implemented. **Evidence:** migration and query API.
+**Acceptance.** Episode/transition constraints, a Timescale hypertable, a live hourly aggregate view
+and portable 30-day retention trigger are migrated; query limits are enforced. **State:** Implemented.
+**Evidence:** migration and query API.
 
 **User Stories:** US-P7-S1-002, US-P7-S1-005.
 

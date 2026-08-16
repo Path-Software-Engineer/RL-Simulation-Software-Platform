@@ -93,7 +93,8 @@ provisions the zero-cost foundation; builds five immutable Linux images with loc
 them to ACR without ACR Tasks, using resumable retries for transient registry timeouts; applies the
 checksum-protected Neon migrations; and validates public HTTPS/WSS plus all three real product
 profiles. The migration image uses the compact PostgreSQL 17 client; TimescaleDB runs in Neon, not
-inside that release job.
+inside that release job. The schema deliberately uses only Neon's Timescale Apache feature set;
+hourly aggregation and retention remain portable PostgreSQL objects.
 
 Successful output contains only public URLs and non-secret evidence:
 

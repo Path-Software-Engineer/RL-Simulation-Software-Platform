@@ -1,12 +1,13 @@
 BEGIN;
 
-DROP MATERIALIZED VIEW IF EXISTS run_metric_hourly;
+DROP VIEW IF EXISTS run_metric_hourly;
 DROP TABLE IF EXISTS idempotency_records;
 DROP TABLE IF EXISTS inbox_messages;
 DROP TABLE IF EXISTS outbox_messages;
 DROP TABLE IF EXISTS audit_entries;
 DROP TABLE IF EXISTS feedback_annotations;
 DROP TABLE IF EXISTS metric_samples;
+DROP FUNCTION IF EXISTS prune_expired_metric_samples();
 DROP TABLE IF EXISTS step_transitions;
 DROP TABLE IF EXISTS episodes;
 DROP TABLE IF EXISTS training_runs;

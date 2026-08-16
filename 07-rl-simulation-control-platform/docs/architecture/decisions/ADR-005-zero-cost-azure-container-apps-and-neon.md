@@ -50,7 +50,10 @@ secrets. They are never Bicep outputs, repository files or console messages.
 
 The migration Job uses the direct Neon connection. Each migration owns its transaction and updates
 `schema_migrations`. The Job also verifies a `release_migration_checksums` ledger and fails closed
-on drift. Application acceptance starts only after the Job succeeds.
+on drift. The Neon Free migration stays inside the Timescale Apache feature boundary: the metric
+hypertable is paired with a live PostgreSQL aggregate view and a portable retention trigger instead
+of licensed continuous-aggregate or background-retention policies. Application acceptance starts
+only after the Job succeeds.
 
 ## Consequences
 
