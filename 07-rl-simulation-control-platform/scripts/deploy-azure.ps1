@@ -115,8 +115,11 @@ $WorkloadSource = Get-Content -LiteralPath "infra/azure/workloads.bicep" -Raw
 if ($FoundationSource -match 'Microsoft\.(Cache|OperationalInsights)/') {
     throw "Zero-cost guard failed: managed Redis and stored Log Analytics are forbidden."
 }
-if ($FoundationSource -notmatch "destination:\s*'none'" -or $FoundationSource -notmatch "name:\s*'Standard'") {
-    throw "Zero-cost guard failed: logs must be disabled and ACR must use the documented Standard grant."
+if (
+    $FoundationSource -notmatch "destination:\s*'azure-monitor'" -or
+    $FoundationSource -notmatch "name:\s*'Standard'"
+) {
+    throw "Zero-cost guard failed: logs must have no storage destination and ACR must use the documented Standard grant."
 }
 if ($WorkloadSource -notmatch 'minReplicas:\s*0' -or $WorkloadSource -notmatch 'maxReplicas:\s*1') {
     throw "Zero-cost guard failed: the public app must scale from zero to at most one replica."

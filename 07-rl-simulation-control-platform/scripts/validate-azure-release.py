@@ -39,7 +39,7 @@ def main() -> None:
             "Microsoft.ContainerRegistry/registries@",
             "Microsoft.ManagedIdentity/userAssignedIdentities@",
             "Microsoft.Authorization/roleAssignments@",
-            "destination: 'none'",
+            "destination: 'azure-monitor'",
             "name: 'Standard'",
             "adminUserEnabled: false",
             "costProfile: 'free-grant-scale-to-zero'",

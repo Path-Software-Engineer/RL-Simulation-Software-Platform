@@ -32,7 +32,8 @@ intentionally absent. The resource group defaults to `rg-p7-rl-simulation-demo` 
   usage charge while the app is at zero and includes a monthly consumption grant.
 - ACR uses Standard because new Azure accounts currently include one Standard registry for 12
   months. Delete the resource group before that grant expires.
-- Application-log storage is disabled (`destination: none`), avoiding a Log Analytics resource.
+- Application logs use the `azure-monitor` control-plane destination without any diagnostic
+  setting, storage target or Log Analytics workspace, so no application logs are persisted.
 - Neon must remain on its Free plan with autosuspend enabled.
 - No paid Redis, NAT gateway, private endpoint, dedicated workload profile or always-on replica is
   permitted in this release profile.

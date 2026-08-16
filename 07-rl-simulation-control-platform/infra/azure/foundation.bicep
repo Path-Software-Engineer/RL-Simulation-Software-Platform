@@ -30,7 +30,9 @@ resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   tags: tags
   properties: {
     appLogsConfiguration: {
-      destination: 'none'
+      // Azure Monitor without diagnostic settings stores no application logs and
+      // avoids the unsupported literal `none` in older regional control planes.
+      destination: 'azure-monitor'
     }
   }
 }
