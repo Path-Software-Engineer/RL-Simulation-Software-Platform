@@ -42,7 +42,7 @@ if ($Ready.status -ne "ready") { throw "API dependencies are not ready." }
 
 $Environment = Invoke-RestMethod -Uri "$ApiBaseUrl/api/v1/environments/11111111-1111-4111-8111-111111111101" -Headers $AuthHeaders -TimeoutSec 10
 $Policy = Invoke-RestMethod -Uri "$ApiBaseUrl/api/v1/policies/22222222-2222-4222-8222-222222222201" -Headers $AuthHeaders -TimeoutSec 10
-if ($Environment.version -ne "1.0.0" -or $Policy.sha256 -ne "58d3eac12251df3a3e708eeb6544a056921db9d6f4b2f4930db4d85ae32f7a08") {
+if ($Environment.version -ne "1.0.0" -or $Policy.sha256 -ne "22d5faf9a94fcd05fdf31d2a1429a1b8f02d4f394f6cb61b95cc26351060927f") {
     throw "Registered environment or policy identity differs from Sprint 1 evidence."
 }
 

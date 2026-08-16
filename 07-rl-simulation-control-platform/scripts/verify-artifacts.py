@@ -27,7 +27,7 @@ def main() -> None:
         if set(payload["actionByState"].values()) - {"up", "right", "down", "left", "blocked"}:
             raise SystemExit(f"policy contains an arbitrary action: {path.name}")
     environment = ROOT / "artifacts/manifests/gridworld-environment-v1.json"
-    if digest(environment) != "92da1f86009908279cd2cd9d4323056f0a83fb6bdd984dd67fcb8dd7ea28fb49":
+    if digest(environment) != "1b818490c0e1ab1b17753f0d089d547686035efb4c52f4e6bbbf0dfac23cbc43":
         raise SystemExit("environment manifest hash mismatch")
     print(f"OK - {len(manifest['policies'])} policy artifacts and environment manifest verified")
 

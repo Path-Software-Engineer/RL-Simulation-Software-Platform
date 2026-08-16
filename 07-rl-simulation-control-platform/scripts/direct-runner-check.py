@@ -13,7 +13,7 @@ from rl_runner.runner import RunRequest, run_episode  # noqa: E402
 def main() -> None:
     artifact_root = ROOT / "artifacts/policies"
     policy_id = "22222222-2222-4222-8222-222222222201"
-    sha256 = "58d3eac12251df3a3e708eeb6544a056921db9d6f4b2f4930db4d85ae32f7a08"
+    sha256 = "22d5faf9a94fcd05fdf31d2a1429a1b8f02d4f394f6cb61b95cc26351060927f"
     policy = PolicyRegistry(artifact_root).load(policy_id, sha256)
     result = run_episode(
         RunRequest(

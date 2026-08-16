@@ -208,7 +208,7 @@ VALUES (
   '1.0.0',
   '{"rows":6,"columns":6,"start":{"row":5,"column":0},"goal":{"row":0,"column":5},"obstacles":[{"row":4,"column":1},{"row":3,"column":1},{"row":2,"column":3},{"row":1,"column":3},{"row":1,"column":4}],"rewardMap":{"step":-0.04,"collision":-1.0,"goal":10.0},"observationSpace":"Discrete(36)","actionSpace":["up","right","down","left"]}'::jsonb,
   'artifact://manifests/gridworld-environment-v1.json',
-  '92da1f86009908279cd2cd9d4323056f0a83fb6bdd984dd67fcb8dd7ea28fb49',
+  '1b818490c0e1ab1b17753f0d089d547686035efb4c52f4e6bbbf0dfac23cbc43',
   TRUE
 )
 ON CONFLICT DO NOTHING;
@@ -222,7 +222,7 @@ VALUES
     '22222222-2222-4222-8222-222222222201',
     '11111111-1111-4111-8111-111111111101',
     'q-learning', '1.0.0', 'artifact://policies/q-learning-gridworld-v1.json',
-    '58d3eac12251df3a3e708eeb6544a056921db9d6f4b2f4930db4d85ae32f7a08',
+    '22d5faf9a94fcd05fdf31d2a1429a1b8f02d4f394f6cb61b95cc26351060927f',
     'Discrete(36)', '["up","right","down","left"]'::jsonb,
     '{"0,0":"right","0,1":"right","0,2":"right","0,3":"right","0,4":"right","0,5":"up","1,0":"up","1,1":"up","1,2":"up","1,3":"blocked","1,4":"blocked","1,5":"up","2,0":"up","2,1":"up","2,2":"up","2,3":"blocked","2,4":"right","2,5":"up","3,0":"up","3,1":"blocked","3,2":"up","3,3":"right","3,4":"up","3,5":"up","4,0":"up","4,1":"blocked","4,2":"up","4,3":"up","4,4":"up","4,5":"up","5,0":"up","5,1":"right","5,2":"up","5,3":"up","5,4":"up","5,5":"up"}'::jsonb,
     'Repository-authored deterministic teaching policy; not imported from a notebook.', TRUE
@@ -231,7 +231,7 @@ VALUES
     '22222222-2222-4222-8222-222222222202',
     '11111111-1111-4111-8111-111111111101',
     'sarsa', '1.0.0', 'artifact://policies/sarsa-gridworld-v1.json',
-    '88f759a4a95a4ad71fb68c162aeecc8f7b0c5a1443666d841b84cd6db1667fa3',
+    'b7043771657ec37f235103485a7375a395431db0b2dc0e39d2070ca4e87aadcb',
     'Discrete(36)', '["up","right","down","left"]'::jsonb,
     '{"0,0":"right","0,1":"right","0,2":"right","0,3":"right","0,4":"right","0,5":"up","1,0":"up","1,1":"left","1,2":"up","1,3":"blocked","1,4":"blocked","1,5":"up","2,0":"up","2,1":"left","2,2":"left","2,3":"blocked","2,4":"right","2,5":"up","3,0":"up","3,1":"blocked","3,2":"down","3,3":"right","3,4":"right","3,5":"up","4,0":"down","4,1":"blocked","4,2":"down","4,3":"down","4,4":"right","4,5":"up","5,0":"right","5,1":"right","5,2":"right","5,3":"right","5,4":"right","5,5":"up"}'::jsonb,
     'Repository-authored conservative teaching policy; not imported from a notebook.', TRUE

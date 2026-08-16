@@ -4,7 +4,7 @@
 
 - Environment: `pathfinder-grid-6x6` v1.0.0, 6×6 discrete space.
 - Policy: Q-Learning v1.0.0.
-- Policy SHA-256: `58d3eac12251df3a3e708eeb6544a056921db9d6f4b2f4930db4d85ae32f7a08`.
+- Policy SHA-256: `22d5faf9a94fcd05fdf31d2a1429a1b8f02d4f394f6cb61b95cc26351060927f`.
 - Seed: 7. Maximum steps: 64.
 
 ## Deterministic oracle

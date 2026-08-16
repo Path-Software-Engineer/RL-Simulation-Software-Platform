@@ -9,14 +9,14 @@
       "algorithm": "q-learning",
       "version": "1.0.0",
       "uri": "artifact://policies/q-learning-gridworld-v1.json",
-      "sha256": "58d3eac12251df3a3e708eeb6544a056921db9d6f4b2f4930db4d85ae32f7a08"
+      "sha256": "22d5faf9a94fcd05fdf31d2a1429a1b8f02d4f394f6cb61b95cc26351060927f"
     },
     {
       "policyId": "22222222-2222-4222-8222-222222222202",
       "algorithm": "sarsa",
       "version": "1.0.0",
       "uri": "artifact://policies/sarsa-gridworld-v1.json",
-      "sha256": "88f759a4a95a4ad71fb68c162aeecc8f7b0c5a1443666d841b84cd6db1667fa3"
+      "sha256": "b7043771657ec37f235103485a7375a395431db0b2dc0e39d2070ca4e87aadcb"
     }
   ],
   "provenance": "Repository-authored deterministic teaching policies.",
