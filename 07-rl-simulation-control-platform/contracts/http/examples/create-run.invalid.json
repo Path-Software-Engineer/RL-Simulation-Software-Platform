@@ -1,0 +1,6 @@
+{
+  "environmentId": "arbitrary-python-module",
+  "policyId": "../../unsafe.pkl",
+  "seed": -1,
+  "maxSteps": 50000
+}

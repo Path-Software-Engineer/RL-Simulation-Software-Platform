@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paths.dev/schemas/rl/episode-completed-message-v1.schema.json",
+  "allOf": [
+    {"$ref": "./message-envelope-v1.schema.json"},
+    {"type": "object", "properties": {"message_type": {"const": "rl.run.episode-completed.v1"}, "payload": {"$ref": "./episode-completed-v1.schema.json"}}}
+  ]
+}

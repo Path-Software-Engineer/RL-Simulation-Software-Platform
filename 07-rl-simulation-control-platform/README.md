@@ -1,5 +1,47 @@
 # 07-rl-simulation-control-platform
 
+## Current implementation status — Sprint 1
+
+Sprint 1, **Gridworld Agent Visualizer**, is delivered on
+`sprint/p7-s1-gridworld-agent-visualizer`. The delivered scope includes:
+
+- Nuxt/Vue workspace with an accessible Gridworld, policy overlay and episode player.
+- Go/Gin control API with local operator authentication, idempotency and bounded queries.
+- PostgreSQL/TimescaleDB as durable truth and Redis Streams with outbox/inbox/DLQ boundaries.
+- Python runner restricted to registered, SHA-256-verified Q-Learning and SARSA artifacts.
+- Durable `queued → running → succeeded` evidence, cooperative controls and audited feedback.
+- OpenAPI 3.1, AsyncAPI 3.0, JSON Schema, ADRs, threat model, runbook and sprint evidence.
+
+The registered deterministic Q-Learning oracle reaches the goal in **10 transitions**, with
+**0 collisions** and **9.64 total reward**. This validates the controlled teaching fixture only;
+it is not a claim of generalization or production readiness.
+
+Run the complete local acceptance gate from the project directory:
+
+```powershell
+Copy-Item .env.example .env
+# Replace OPERATOR_TOKEN before sharing the workspace.
+.\scripts\setup.ps1
+.\scripts\run-quality-gate.ps1 -KeepRunning
+```
+
+Local routes:
+
+- Web: `http://127.0.0.1:3000`
+- API readiness: `http://127.0.0.1:8080/health/ready`
+- OpenAPI: `http://127.0.0.1:8080/openapi.json`
+
+See [Sprint 1 evidence](docs/sprints/sprint-01-gridworld-agent-visualizer/README.md),
+[architecture](docs/architecture/architecture.md), [runbook](docs/runbook.md),
+[user stories](docs/user-stories.md) and [technical stories](docs/technical-stories.md).
+
+> Evidence boundary: the complete containerized gate and live smoke passed on 2026-08-15. The
+> Sprint 1 tag is a technical delivery checkpoint requested before Sprint 2; no archived browser
+> captures or independent visual-certification claim are attached to that tag.
+
+---
+
+
 ## 🧠 Descripción
 
 **RL Simulation Control Platform** es una aplicación de software aplicada a Reinforcement Learning y simulación.
@@ -739,7 +781,10 @@ Sin responsabilidades mezcladas
 
 # 🚀 Estado actual
 
-Pendiente / por iniciar.
+Sprint 1 entregado como **checkpoint técnico versionado**. Pasaron los validadores estructurales,
+hashes, episodio determinista, higiene, suites de Python/Go/Nuxt, build de imágenes, Compose y smoke
+cross-layer real. La revisión visual no quedó archivada antes del tag y por eso no se afirma una
+certificación visual. Sprint 2 y Sprint 3 continúan únicamente como roadmap en este checkpoint.
 
 ---
 
@@ -748,15 +793,11 @@ Pendiente / por iniciar.
 ## Sprint 1
 
 ```txt
-Definir Gridworld
-Crear reward map
-Crear state/action cards
-Crear episode runner
-Crear trajectory viewer
-Crear policy notes
-Crear visual report
-Documentar labs
-Actualizar README
+Gate containerizado completo aprobado
+queued → running → succeeded validado contra PostgreSQL y Redis reales
+Smoke real aprobado: 10 transiciones, 9.64 reward, 0 colisiones, goal reached
+Tag técnico de entrega creado antes de Sprint 2
+Capturas y certificación visual explícitamente no incluidas en este checkpoint
 ```
 
 ## Sprint 2
@@ -855,5 +896,5 @@ Path Software Engineer convierte esa profundidad en producto.
 
 **Jean Franck Loa Rojas**
 
-Path Software Engineer Builder  
+Path Software Engineer Builder
 Reinforcement Learning • Gridworld • DQN • World Models • Simulation • Dashboards • Agent Visualization • Product Architecture

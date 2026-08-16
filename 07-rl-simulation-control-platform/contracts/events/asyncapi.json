@@ -1,0 +1,29 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {"title": "RL Simulation Control Events", "version": "0.1.0"},
+  "servers": {"localRedis": {"host": "redis:6379", "protocol": "redis", "description": "Local Redis Streams boundary"}},
+  "channels": {
+    "commands": {"address": "rl.commands.v1", "messages": {"runRequested": {"$ref": "#/components/messages/runRequested"}, "pauseRequested": {"$ref": "#/components/messages/pauseRequested"}, "resumeRequested": {"$ref": "#/components/messages/resumeRequested"}, "cancelRequested": {"$ref": "#/components/messages/cancelRequested"}}},
+    "events": {"address": "rl.events.v1", "messages": {"runStarted": {"$ref": "#/components/messages/runStarted"}, "runPaused": {"$ref": "#/components/messages/runPaused"}, "metricSampled": {"$ref": "#/components/messages/metricSampled"}, "episodeCompleted": {"$ref": "#/components/messages/episodeCompleted"}, "runCompleted": {"$ref": "#/components/messages/runCompleted"}, "runCancelled": {"$ref": "#/components/messages/runCancelled"}, "runFailed": {"$ref": "#/components/messages/runFailed"}}},
+    "deadLetter": {"address": "rl.dead-letter.v1", "description": "Bounded messages that exhausted retry policy"}
+  },
+  "operations": {
+    "consumeCommands": {"action": "receive", "channel": {"$ref": "#/channels/commands"}},
+    "publishEvents": {"action": "send", "channel": {"$ref": "#/channels/events"}}
+  },
+  "components": {
+    "messages": {
+      "runRequested": {"name": "rl.run.requested.v1", "payload": {"$ref": "./schemas/run-requested-message-v1.schema.json"}},
+      "pauseRequested": {"name": "rl.run.pause-requested.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "resumeRequested": {"name": "rl.run.resume-requested.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "cancelRequested": {"name": "rl.run.cancel-requested.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "runStarted": {"name": "rl.run.started.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "runPaused": {"name": "rl.run.paused.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "metricSampled": {"name": "rl.run.metric-sampled.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "episodeCompleted": {"name": "rl.run.episode-completed.v1", "payload": {"$ref": "./schemas/episode-completed-message-v1.schema.json"}},
+      "runCompleted": {"name": "rl.run.completed.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "runCancelled": {"name": "rl.run.cancelled.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}},
+      "runFailed": {"name": "rl.run.failed.v1", "payload": {"$ref": "./schemas/message-envelope-v1.schema.json"}}
+    }
+  }
+}

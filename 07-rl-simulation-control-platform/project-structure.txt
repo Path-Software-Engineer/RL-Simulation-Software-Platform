@@ -1,0 +1,20 @@
+07-rl-simulation-control-platform/
+|-- apps/web/                         Nuxt/Vue experience
+|-- artifacts/
+|   |-- manifests/                    versioned environment/policy manifests
+|   `-- policies/                     small JSON tabular policies
+|-- contracts/
+|   |-- events/                       AsyncAPI, JSON Schema, examples
+|   `-- http/                         OpenAPI and request examples
+|-- database/migrations/              PostgreSQL/TimescaleDB schema
+|-- docs/
+|   |-- architecture/                 system, ADRs and threat model
+|   `-- sprints/                      Sprint 1 week evidence
+|-- infra/docker/                     pinned application Dockerfiles
+|-- labs/                             experimental boundary notes
+|-- reports/sprint-01/                controlled result and release evidence
+|-- scripts/                          setup, run, smoke and quality gate
+|-- services/control-api/             Go/Gin control plane
+|-- workers/rl-runner/                Python execution boundary
+|-- docker-compose.yml
+`-- README.md

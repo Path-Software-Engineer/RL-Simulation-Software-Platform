@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "tabular-policy-set",
+  "environmentId": "11111111-1111-4111-8111-111111111101",
+  "environmentVersion": "1.0.0",
+  "policies": [
+    {
+      "policyId": "22222222-2222-4222-8222-222222222201",
+      "algorithm": "q-learning",
+      "version": "1.0.0",
+      "uri": "artifact://policies/q-learning-gridworld-v1.json",
+      "sha256": "58d3eac12251df3a3e708eeb6544a056921db9d6f4b2f4930db4d85ae32f7a08"
+    },
+    {
+      "policyId": "22222222-2222-4222-8222-222222222202",
+      "algorithm": "sarsa",
+      "version": "1.0.0",
+      "uri": "artifact://policies/sarsa-gridworld-v1.json",
+      "sha256": "88f759a4a95a4ad71fb68c162aeecc8f7b0c5a1443666d841b84cd6db1667fa3"
+    }
+  ],
+  "provenance": "Repository-authored deterministic teaching policies.",
+  "limitations": [
+    "Validated only in the registered 6x6 environment.",
+    "Not evidence of generalization, safety or production readiness."
+  ]
+}

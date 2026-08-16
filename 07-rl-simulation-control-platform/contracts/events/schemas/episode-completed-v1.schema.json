@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paths.dev/schemas/rl/episode-completed-v1.schema.json",
+  "title": "rl.run.episode-completed.v1 payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["episode_id", "episode_number", "status", "total_reward", "step_count", "collisions", "terminal_reason", "started_at", "completed_at", "transitions"],
+  "properties": {
+    "episode_id": {"type": "string", "format": "uuid"},
+    "episode_number": {"const": 1},
+    "status": {"enum": ["succeeded", "truncated", "cancelled", "failed"]},
+    "total_reward": {"type": "number"},
+    "step_count": {"type": "integer", "minimum": 0, "maximum": 200},
+    "collisions": {"type": "integer", "minimum": 0},
+    "terminal_reason": {"enum": ["goal_reached", "max_steps", "cancelled", "runner_error"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "transitions": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "step_index", "state", "action", "next_state", "reward", "terminated", "truncated", "sampled_at"],
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "step_index": {"type": "integer", "minimum": 0, "maximum": 199},
+          "state": {"$ref": "#/$defs/coordinate"},
+          "action": {"enum": ["up", "right", "down", "left"]},
+          "next_state": {"$ref": "#/$defs/coordinate"},
+          "reward": {"type": "number"},
+          "terminated": {"type": "boolean"},
+          "truncated": {"type": "boolean"},
+          "sampled_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "coordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["row", "column"],
+      "properties": {
+        "row": {"type": "integer", "minimum": 0, "maximum": 5},
+        "column": {"type": "integer", "minimum": 0, "maximum": 5}
+      }
+    }
+  }
+}
