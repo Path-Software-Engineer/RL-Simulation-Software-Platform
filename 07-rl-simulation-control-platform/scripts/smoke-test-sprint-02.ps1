@@ -2,7 +2,8 @@
 param(
     [string]$ApiBaseUrl = "http://127.0.0.1:8080",
     [string]$WebBaseUrl = "http://127.0.0.1:3000",
-    [string]$OperatorToken = ""
+    [string]$OperatorToken = "",
+    [ValidateRange(30, 900)][int]$TrainingTimeoutSeconds = 300
 )
 
 $ErrorActionPreference = "Stop"
@@ -45,10 +46,19 @@ if ($Policy.algorithm -ne "dqn" -or $Policy.sha256 -ne $PolicyHash) {
 
 $Run = Invoke-RestMethod -Uri "$ApiBaseUrl/api/v1/training-runs" -Method Post -Headers $CommandHeaders -ContentType "application/json" -Body $Request -TimeoutSec 10
 $Terminal = @("succeeded", "failed", "cancelled")
-for ($Attempt = 1; $Attempt -le 180; $Attempt++) {
+$StartedAt = [DateTime]::UtcNow
+$MaxAttempts = $TrainingTimeoutSeconds * 2
+for ($Attempt = 1; $Attempt -le $MaxAttempts; $Attempt++) {
     Start-Sleep -Milliseconds 500
     $Run = Invoke-RestMethod -Uri "$ApiBaseUrl/api/v1/training-runs/$($Run.id)" -Headers $AuthHeaders -TimeoutSec 10
     if ($Terminal -contains $Run.status) { break }
+    if ($Attempt % 20 -eq 0) {
+        $ElapsedSeconds = [math]::Round(([DateTime]::UtcNow - $StartedAt).TotalSeconds)
+        Write-Host "DQN acceptance: status=$($Run.status) | elapsed=${ElapsedSeconds}s"
+    }
+}
+if ($Terminal -notcontains $Run.status) {
+    throw "DQN training did not reach a terminal state within ${TrainingTimeoutSeconds}s: status=$($Run.status)."
 }
 if ($Run.status -ne "succeeded" -or $Run.terminalReason -ne "training_budget_completed") {
     throw "DQN training ended unexpectedly: status=$($Run.status), reason=$($Run.terminalReason)."

@@ -76,6 +76,8 @@ the following in one traceable run:
 - The migration Job reaches `Succeeded` through Neon's direct TLS endpoint.
 - API readiness confirms Neon and the same-replica transient Redis transport are reachable.
 - Public Web, API and OpenAPI routes use HTTPS; the run stream uses WSS.
+- The DQN acceptance allows up to five minutes for 40 episodes and 400 metrics to be projected
+  through the scale-to-zero replica into Neon, while reporting progress every ten seconds.
 - Sprint 1, Sprint 2 and Sprint 3 remote smokes all pass against durable cloud state.
 - The Container App reports `minReplicas: 0`, `maxReplicas: 1`; no Managed Redis or Log Analytics
   resource exists in the release resource group.

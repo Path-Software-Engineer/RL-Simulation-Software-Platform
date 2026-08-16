@@ -227,6 +227,7 @@ def main() -> None:
             "/openapi.json",
             "smoke-test.ps1",
             "smoke-test-sprint-02.ps1",
+            "-TrainingTimeoutSeconds 300",
             "smoke-test-sprint-03.ps1",
         ),
         "release smoke",

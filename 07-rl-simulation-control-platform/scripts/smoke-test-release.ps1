@@ -36,7 +36,8 @@ if ($Web.StatusCode -ne 200 -or $Web.Content -notmatch "World Model Rollout View
 & "$PSScriptRoot\smoke-test-sprint-02.ps1" `
     -ApiBaseUrl $ApiBaseUrl `
     -WebBaseUrl $WebBaseUrl `
-    -OperatorToken $OperatorToken
+    -OperatorToken $OperatorToken `
+    -TrainingTimeoutSeconds 300
 & "$PSScriptRoot\smoke-test-sprint-03.ps1" `
     -ApiBaseUrl $ApiBaseUrl `
     -WebBaseUrl $WebBaseUrl `
