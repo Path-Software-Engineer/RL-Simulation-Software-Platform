@@ -133,7 +133,7 @@ def main() -> None:
     require(
         migration_image,
         (
-            "FROM timescale/timescaledb:2.29.0-pg17",
+            "FROM postgres:17-alpine",
             "COPY database/migrations/ /migrations/",
             "USER postgres",
             "ENTRYPOINT [\"/usr/local/bin/run-migrations\"]",
@@ -165,6 +165,8 @@ def main() -> None:
             'Read-RequiredSecret "NEON_DATABASE_URL_DIRECT"',
             'Read-RequiredSecret "OPERATOR_TOKEN"',
             '"acr", "login"',
+            "function Push-DockerImage",
+            "MaxAttempts = 4",
             "docker build",
             "docker push",
             "--platform linux/amd64",

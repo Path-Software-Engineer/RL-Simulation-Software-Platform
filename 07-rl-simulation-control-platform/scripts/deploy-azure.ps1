@@ -33,6 +33,28 @@ function Read-RequiredSecret {
     return $Value.Trim()
 }
 
+function Push-DockerImage {
+    param(
+        [Parameter(Mandatory)][string]$Image,
+        [ValidateRange(1, 10)][int]$MaxAttempts = 4
+    )
+    for ($Attempt = 1; $Attempt -le $MaxAttempts; $Attempt++) {
+        docker push $Image
+        if ($LASTEXITCODE -eq 0) {
+            return
+        }
+        if ($Attempt -eq $MaxAttempts) {
+            throw "Docker push failed after $MaxAttempts attempts: $Image"
+        }
+        $DelaySeconds = [Math]::Min(60, 10 * [Math]::Pow(2, $Attempt - 1))
+        Write-Warning (
+            "Docker push attempt $Attempt failed; retrying resumable upload in " +
+            "$DelaySeconds seconds: $Image"
+        )
+        Start-Sleep -Seconds $DelaySeconds
+    }
+}
+
 function Assert-NeonUrl {
     param(
         [Parameter(Mandatory)][string]$Name,
@@ -210,10 +232,7 @@ if (-not $SkipBuild) {
             throw "Local Docker build failed for p7/$($Image.Name)."
         }
         Write-Host "Pushing immutable image: $FullImage" -ForegroundColor Cyan
-        docker push $FullImage
-        if ($LASTEXITCODE -ne 0) {
-            throw "Docker push failed for p7/$($Image.Name)."
-        }
+        Push-DockerImage -Image $FullImage
     }
 }
 

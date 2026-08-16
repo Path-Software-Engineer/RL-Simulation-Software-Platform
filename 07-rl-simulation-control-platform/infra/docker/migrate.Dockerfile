@@ -1,4 +1,4 @@
-FROM timescale/timescaledb:2.29.0-pg17
+FROM postgres:17-alpine
 
 COPY database/migrations/ /migrations/
 COPY infra/azure/run-migrations.sh /usr/local/bin/run-migrations
