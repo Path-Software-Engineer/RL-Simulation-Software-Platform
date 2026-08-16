@@ -60,12 +60,20 @@ Set-Location "C:\JeanLoa\Path-Software-Engineer\RL-Simulation-Software-Platform\
 Use hidden prompts so credentials are not written into PowerShell history:
 
 ```powershell
-$env:NEON_DATABASE_URL = ConvertFrom-SecureString `
-    (Read-Host "Neon pooled URL" -AsSecureString) -AsPlainText
-$env:NEON_DATABASE_URL_DIRECT = ConvertFrom-SecureString `
-    (Read-Host "Neon direct URL" -AsSecureString) -AsPlainText
-$env:OPERATOR_TOKEN = ConvertFrom-SecureString `
-    (Read-Host "Operator token" -AsSecureString) -AsPlainText
+function Read-ReleaseSecret([string]$Prompt) {
+    $SecureValue = Read-Host $Prompt -AsSecureString
+    try {
+        $Credential = New-Object System.Net.NetworkCredential -ArgumentList "", $SecureValue
+        return $Credential.Password
+    }
+    finally {
+        $SecureValue.Dispose()
+    }
+}
+
+$env:NEON_DATABASE_URL = Read-ReleaseSecret "Neon pooled URL"
+$env:NEON_DATABASE_URL_DIRECT = Read-ReleaseSecret "Neon direct URL"
+$env:OPERATOR_TOKEN = [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
 ```
 
 Never paste these values into chat, commit them or store them in `.env`.
