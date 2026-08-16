@@ -23,13 +23,17 @@ TEXT_SUFFIXES = {
     ".json",
     ".md",
     ".mjs",
+    ".bicep",
     ".py",
+    ".ps1",
+    ".sh",
     ".sql",
     ".toml",
     ".ts",
     ".vue",
     ".yaml",
     ".yml",
+    ".dockerfile",
 }
 TEXT_NAMES = {".dockerignore", ".env.example", ".gitignore", "Dockerfile"}
 BROKEN_TEXT = re.compile("\ufffd|\u00c3.|\u00c2.|\u00e2[\u0080-\u00bf]{2}")

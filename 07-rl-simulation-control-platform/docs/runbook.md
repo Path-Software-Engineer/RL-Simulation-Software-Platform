@@ -65,3 +65,18 @@ must not be inferred from the containerized gate.
 The Sprint 3 technical delivery tag is `v0.3.0-sprint-03-world-model-rollout-viewer`. Its complete
 containerized gate passed on 2026-08-16. Azure deployment and Neon connectivity require separate
 release evidence and must not be inferred from this tag.
+
+## Azure + Neon release acceptance
+
+Follow [the Azure + Neon release guide](azure-neon-release.md). Cloud acceptance requires all of
+the following in one traceable run:
+
+- Bicep provisioning and five immutable ACR builds succeed from a clean Git commit.
+- The migration Job reaches `Succeeded` through Neon's direct TLS endpoint.
+- API readiness confirms Neon and the same-replica transient Redis transport are reachable.
+- Public Web, API and OpenAPI routes use HTTPS; the run stream uses WSS.
+- Sprint 1, Sprint 2 and Sprint 3 remote smokes all pass against durable cloud state.
+- The Container App reports `minReplicas: 0`, `maxReplicas: 1`; no Managed Redis or Log Analytics
+  resource exists in the release resource group.
+
+A created Azure resource, a healthy container or an HTTP 200 alone is incomplete release evidence.

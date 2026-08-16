@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### Added
+
+- Reproducible zero-cost Azure foundation with free-grant ACR, managed identity, no stored logs and
+  a complete Container Apps replica that scales to zero.
+- Same-origin Caddy gateway plus Nuxt, Go, Python and transient Redis sidecars in one bounded demo.
+- Atomic, SHA-256-protected Container Apps migration Job using a direct Neon endpoint.
+- Clean-checkout deployment orchestration and public HTTPS/WSS plus three-profile cloud smoke.
+- Local gate execution of the release migration image twice to prove schema-ledger idempotency.
+- Pinned, no-admin Azure CLI bootstrap for Windows accounts without `winget`.
+
+### Evidence boundary
+
+- The release assets are statically validated in the local quality gate.
+- Azure provisioning, Neon connectivity and public route acceptance remain unverified until the
+  deployment script completes in an authenticated Azure session.
+
 ## [v0.3.0-sprint-03-world-model-rollout-viewer] - 2026-08-16
 
 ### Added
