@@ -63,6 +63,7 @@ class Transition:
 @dataclass(frozen=True, slots=True)
 class EpisodeResult:
     episode_id: str
+    episode_number: int
     status: str
     total_reward: float
     collisions: int
@@ -78,7 +79,7 @@ class EpisodeResult:
     def as_payload(self) -> dict[str, object]:
         return {
             "episode_id": self.episode_id,
-            "episode_number": 1,
+            "episode_number": self.episode_number,
             "status": self.status,
             "total_reward": round(self.total_reward, 4),
             "step_count": self.step_count,
@@ -137,6 +138,7 @@ def run_episode(
 
     return EpisodeResult(
         episode_id=str(uuid4()),
+        episode_number=1,
         status=status,
         total_reward=total_reward,
         collisions=collisions,

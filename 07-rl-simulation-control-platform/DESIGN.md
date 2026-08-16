@@ -41,3 +41,14 @@ policy intent. Color never carries meaning alone.
 - No decorative 3D, glass blur or neon glow that obscures evidence.
 - No emoji icons, fake live indicators, fabricated charts or controls without backend support.
 - No infinite telemetry lists; every collection is bounded or paginated.
+
+## Sprint 2 training dashboard
+
+- Reward and moving average share one time-series plot; epsilon and loss remain separate because
+  their units and interpretation differ.
+- Every SVG chart includes a programmatic label, non-color legend and expandable exact data table.
+- Summary cards use persisted samples only. Missing series render an explicit empty state.
+- Action distribution pairs bar length with label, count and percentage.
+- Training progress is a semantic progressbar backed by persisted episode count.
+- Responsive acceptance targets 375 px, 768 px, 1024 px and 1440 px with no horizontal page scroll.
+- Reduced-motion preferences disable progress and control transitions.

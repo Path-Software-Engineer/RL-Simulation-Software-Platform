@@ -2,17 +2,18 @@
 |-- apps/web/                         Nuxt/Vue experience
 |-- artifacts/
 |   |-- manifests/                    versioned environment/policy manifests
-|   `-- policies/                     small JSON tabular policies
+|   `-- policies/                     tabular policies and bounded DQN profile
 |-- contracts/
 |   |-- events/                       AsyncAPI, JSON Schema, examples
 |   `-- http/                         OpenAPI and request examples
 |-- database/migrations/              PostgreSQL/TimescaleDB schema
 |-- docs/
 |   |-- architecture/                 system, ADRs and threat model
-|   `-- sprints/                      Sprint 1 week evidence
+|   `-- sprints/                      Sprint 1 and Sprint 2 week evidence
 |-- infra/docker/                     pinned application Dockerfiles
 |-- labs/                             experimental boundary notes
-|-- reports/sprint-01/                controlled result and release evidence
+|-- reports/sprint-01/                tabular control evidence
+|-- reports/sprint-02/                DQN training evidence and demo
 |-- scripts/                          setup, run, smoke and quality gate
 |-- services/control-api/             Go/Gin control plane
 |-- workers/rl-runner/                Python execution boundary

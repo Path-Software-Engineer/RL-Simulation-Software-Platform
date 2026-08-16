@@ -24,8 +24,31 @@ def main() -> None:
         payload = json.loads(path.read_text(encoding="utf-8"))
         if payload["policyId"] != item["policyId"] or payload["version"] != item["version"]:
             raise SystemExit(f"policy identity mismatch: {path.name}")
-        if set(payload["actionByState"].values()) - {"up", "right", "down", "left", "blocked"}:
+        if set(payload.get("actionByState", {}).values()) - {
+            "up",
+            "right",
+            "down",
+            "left",
+            "blocked",
+        }:
             raise SystemExit(f"policy contains an arbitrary action: {path.name}")
+        if payload["algorithm"] == "dqn":
+            training = payload.get("training", {})
+            required = {
+                "episodes",
+                "hiddenUnits",
+                "gamma",
+                "learningRate",
+                "replayCapacity",
+                "batchSize",
+                "targetSyncSteps",
+                "epsilonStart",
+                "epsilonEnd",
+                "epsilonDecayEpisodes",
+                "movingAverageWindow",
+            }
+            if set(training) != required or not 1 <= training["episodes"] <= 100:
+                raise SystemExit(f"DQN training profile is invalid: {path.name}")
     environment = ROOT / "artifacts/manifests/gridworld-environment-v1.json"
     if digest(environment) != "1b818490c0e1ab1b17753f0d089d547686035efb4c52f4e6bbbf0dfac23cbc43":
         raise SystemExit("environment manifest hash mismatch")

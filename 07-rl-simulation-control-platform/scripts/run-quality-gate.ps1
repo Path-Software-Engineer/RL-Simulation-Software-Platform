@@ -35,6 +35,7 @@ try {
     Invoke-Gate "OpenAPI / AsyncAPI / JSON Schema" { & $Python scripts/validate-contracts.py }
     Invoke-Gate "Artifact identity and SHA-256" { & $Python scripts/verify-artifacts.py }
     Invoke-Gate "Direct deterministic runner" { & $Python scripts/direct-runner-check.py }
+    Invoke-Gate "Direct bounded DQN trainer" { & $Python scripts/direct-dqn-check.py }
     Invoke-Gate "Repository UTF-8, whitespace and secret hygiene" { & $Python scripts/check-repository-hygiene.py }
     Invoke-Gate "Python syntax" { & $Python -m compileall -q workers/rl-runner/src scripts }
 
@@ -80,7 +81,7 @@ try {
     }
 
     Write-Host "[5/8] Typechecking, testing and building Nuxt"
-    Invoke-Gate "Nuxt build image" { docker build --file infra/docker/web.Dockerfile --tag rl-simulation-web:quality . }
+    Invoke-Gate "Nuxt build image" { docker compose build web }
 
     Write-Host "[6/8] Validating Docker Compose and application images"
     Invoke-Gate "Docker Compose config" { docker compose config --quiet }
@@ -90,11 +91,17 @@ try {
     Invoke-Gate "Start healthy platform" { docker compose up --detach --wait --wait-timeout 240 }
     $Started = $true
     & "$PSScriptRoot\smoke-test.ps1"
+    & "$PSScriptRoot\smoke-test-sprint-02.ps1"
 
     Write-Host "[8/8] Checking repository hygiene"
-    Invoke-Gate "Git whitespace" { git diff --check }
+    Invoke-Gate "Git whitespace" {
+        git diff --check
+        if ($LASTEXITCODE -ne 0) { throw "Unstaged Git whitespace check failed." }
+        git diff --cached --check
+        if ($LASTEXITCODE -ne 0) { throw "Staged Git whitespace check failed." }
+    }
     Invoke-Gate "Repository hygiene recheck" { & $Python scripts/check-repository-hygiene.py }
-    Write-Host "OK - Project 07 Sprint 1 quality gate passed" -ForegroundColor Green
+    Write-Host "OK - Project 07 Sprint 2 quality gate passed" -ForegroundColor Green
 } finally {
     if ($Started -and -not $KeepRunning) { docker compose down --remove-orphans | Out-Null }
 }

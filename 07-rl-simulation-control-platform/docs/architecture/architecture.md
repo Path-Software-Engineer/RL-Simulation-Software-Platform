@@ -35,3 +35,20 @@
 
 Sprint 1 is a local Docker Compose release. No public cloud resource is created by this sprint.
 The topology is intentionally portable and has no secret or provider-specific dependency.
+
+## Sprint 2 DQN flow
+
+The registered DQN artifact adds training configuration, not executable code. The Python worker
+constructs the bounded neural Q-network internally, samples its replay buffer and synchronizes the
+target network at the registered interval. Each episode is projected before its metrics so the
+dashboard can observe confirmed progress while the run remains `running`.
+
+```text
+Nuxt command → Go outbox → Redis command → bounded DQN worker
+                                              ↓
+                         episode + metric events per episode
+                                              ↓
+                    Go inbox/projector → TimescaleDB → Nuxt charts
+```
+
+See `ADR-003-bounded-dqn-training-and-observability.md` for the execution and evidence boundary.

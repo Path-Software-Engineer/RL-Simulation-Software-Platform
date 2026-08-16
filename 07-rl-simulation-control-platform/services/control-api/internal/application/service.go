@@ -128,10 +128,20 @@ func (service *Service) ListRunMetrics(ctx context.Context, id string, query dom
 		return nil, err
 	}
 	query.Limit = boundedLimit(query.Limit, 50, 200)
-	if query.Metric != "" && query.Metric != "episode_reward" && query.Metric != "episode_steps" && query.Metric != "collisions" {
+	if query.Metric != "" && !knownMetric(query.Metric) {
 		return nil, fmt.Errorf("%w: metric filter", domain.ErrInvalidArgument)
 	}
 	return service.store.ListRunMetrics(ctx, id, query)
+}
+
+func knownMetric(metric string) bool {
+	allowed := map[string]struct{}{
+		"episode_reward": {}, "moving_average_reward": {}, "epsilon": {}, "loss": {},
+		"episode_steps": {}, "collisions": {}, "success_rate": {}, "action_up": {},
+		"action_right": {}, "action_down": {}, "action_left": {},
+	}
+	_, ok := allowed[metric]
+	return ok
 }
 
 func (service *Service) ListRunEpisodes(ctx context.Context, id string, query domain.EpisodeQuery) ([]domain.Episode, error) {

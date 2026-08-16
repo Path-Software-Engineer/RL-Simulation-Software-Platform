@@ -1,9 +1,10 @@
 # 07-rl-simulation-control-platform
 
-## Current implementation status — Sprint 1
+## Current implementation status — Sprint 2
 
-Sprint 1, **Gridworld Agent Visualizer**, is delivered on
-`sprint/p7-s1-gridworld-agent-visualizer`. The delivered scope includes:
+Sprint 1, **Gridworld Agent Visualizer**, is fixed at
+`v0.1.0-sprint-01-gridworld-agent-visualizer`. Sprint 2, **DQN Training Dashboard**, is implemented
+on `sprint/p7-s2-dqn-training-dashboard`. The active scope includes:
 
 - Nuxt/Vue workspace with an accessible Gridworld, policy overlay and episode player.
 - Go/Gin control API with local operator authentication, idempotency and bounded queries.
@@ -11,6 +12,11 @@ Sprint 1, **Gridworld Agent Visualizer**, is delivered on
 - Python runner restricted to registered, SHA-256-verified Q-Learning and SARSA artifacts.
 - Durable `queued → running → succeeded` evidence, cooperative controls and audited feedback.
 - OpenAPI 3.1, AsyncAPI 3.0, JSON Schema, ADRs, threat model, runbook and sprint evidence.
+- A seeded one-hidden-layer DQN with replay buffer, epsilon-greedy exploration and target sync.
+- Forty bounded training episodes with reward, moving average, loss, epsilon, success and action
+  telemetry persisted through Redis Streams into TimescaleDB.
+- A responsive Nuxt observatory with accessible SVG charts, exact data tables, progress, summary
+  cards and action distribution.
 
 The registered deterministic Q-Learning oracle reaches the goal in **10 transitions**, with
 **0 collisions** and **9.64 total reward**. This validates the controlled teaching fixture only;
@@ -35,9 +41,14 @@ See [Sprint 1 evidence](docs/sprints/sprint-01-gridworld-agent-visualizer/README
 [architecture](docs/architecture/architecture.md), [runbook](docs/runbook.md),
 [user stories](docs/user-stories.md) and [technical stories](docs/technical-stories.md).
 
-> Evidence boundary: the complete containerized gate and live smoke passed on 2026-08-15. The
-> Sprint 1 tag is a technical delivery checkpoint requested before Sprint 2; no archived browser
-> captures or independent visual-certification claim are attached to that tag.
+The direct Sprint 2 seed-11 profile completes 40 real episodes and 400 metric samples. Its best
+episode reward is **7.64**, final 10-episode moving average is **-33.13** and success rate is
+**37.5%**. Those deliberately modest results demonstrate observability and instability; they do
+not establish convergence or generalization.
+
+> Evidence boundary: Sprint 1 is a tagged technical checkpoint. Sprint 2 static contracts,
+> artifact identity and direct DQN execution pass in the repository; the containerized gate, live
+> database smoke and visual review must pass before the Sprint 2 tag is created.
 
 ---
 
@@ -781,10 +792,10 @@ Sin responsabilidades mezcladas
 
 # 🚀 Estado actual
 
-Sprint 1 entregado como **checkpoint técnico versionado**. Pasaron los validadores estructurales,
-hashes, episodio determinista, higiene, suites de Python/Go/Nuxt, build de imágenes, Compose y smoke
-cross-layer real. La revisión visual no quedó archivada antes del tag y por eso no se afirma una
-certificación visual. Sprint 2 y Sprint 3 continúan únicamente como roadmap en este checkpoint.
+Sprint 1 y Sprint 2 están entregados como **checkpoints técnicos versionados**. Sprint 2 incorpora
+entrenamiento DQN real y acotado, 40 episodios, 400 métricas persistidas, contratos 0.2, migración
+0002, dashboard Nuxt accesible, smoke cross-layer y documentación explícita de inestabilidad. El
+gate containerizado completo pasó el 2026-08-16; no se archivó certificación visual independiente.
 
 ---
 
@@ -803,14 +814,15 @@ Capturas y certificación visual explícitamente no incluidas en este checkpoint
 ## Sprint 2
 
 ```txt
-Definir training log schema
-Crear reward chart
-Crear epsilon schedule viewer
-Crear loss viewer
-Crear action distribution
-Crear summary cards
-Crear dashboard DQN
-Documentar labs
+Training log schema versionado y migración 0002 implementados
+DQN real: MLP, replay buffer, epsilon-greedy y target network
+Reward chart y promedio móvil implementados
+Epsilon schedule y loss viewers implementados
+Action distribution y summary cards implementados
+Dashboard responsive con tablas accesibles implementado
+Smoke aprobado: 40 episodios ordenados y 400 métricas persistidas
+Gate containerizado completo aprobado el 2026-08-16
+Tag técnico creado; certificación visual independiente no archivada
 ```
 
 ## Sprint 3

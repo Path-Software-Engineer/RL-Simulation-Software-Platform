@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "2.0",
+  "policyId": "22222222-2222-4222-8222-222222222203",
+  "algorithm": "dqn",
+  "version": "1.0.0",
+  "environmentId": "11111111-1111-4111-8111-111111111101",
+  "observationSpace": "Discrete(36)",
+  "actionSpace": ["up", "right", "down", "left"],
+  "provenance": "Repository-authored bounded DQN training profile with deterministic seeded initialization.",
+  "actionByState": {},
+  "training": {
+    "episodes": 40,
+    "hiddenUnits": 16,
+    "gamma": 0.95,
+    "learningRate": 0.01,
+    "replayCapacity": 512,
+    "batchSize": 16,
+    "targetSyncSteps": 32,
+    "epsilonStart": 1.0,
+    "epsilonEnd": 0.05,
+    "epsilonDecayEpisodes": 32,
+    "movingAverageWindow": 10
+  },
+  "limitations": [
+    "This small pure-Python network is an educational controlled run, not a benchmark.",
+    "A completed training budget does not imply convergence, safety or generalization."
+  ]
+}

@@ -2,7 +2,27 @@
 
 ## [Unreleased]
 
-Sprint 2 and Sprint 3 remain outside this tagged checkpoint.
+## [v0.2.0-sprint-02-dqn-training-dashboard] - 2026-08-16
+
+### Added
+
+- Bounded seeded DQN with a one-hidden-layer Q-network, replay buffer, epsilon decay and target
+  network synchronization.
+- Versioned DQN training artifact plus migration 0002 for the registered profile and ten training
+  metric families.
+- Per-episode event projection for 40 episodes and 400 persisted metric samples.
+- Nuxt DQN observatory with reward/moving-average, epsilon and loss charts, accessible tables,
+  progress, summary cards and action distribution.
+- Direct DQN validator, runner tests and a real Sprint 2 cross-layer smoke test.
+
+### Evidence boundary
+
+- The seed-11 direct profile records best reward 7.64, final moving average -33.13 and 37.5%
+  success. This is evidence of a real bounded run, not convergence.
+- The full eight-stage containerized gate and both live cross-layer smoke flows passed on
+  2026-08-16: the tabular checkpoint plus 40 DQN episodes and 400 persisted metric samples.
+- Independent browser captures and visual certification were not archived before this technical
+  delivery tag.
 
 ## [v0.1.0-sprint-01-gridworld-agent-visualizer] - 2026-08-16
 

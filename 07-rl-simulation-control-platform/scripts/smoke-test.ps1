@@ -84,7 +84,7 @@ if (-not $TransitionsComplete) {
 if ($Metrics.Count -ne 3) { throw "Expected exactly three bounded metric samples." }
 
 $Web = Invoke-WebRequest -Uri $WebBaseUrl -UseBasicParsing -TimeoutSec 10
-if ($Web.StatusCode -ne 200 -or $Web.Content -notmatch "Gridworld Agent Visualizer") {
+if ($Web.StatusCode -ne 200 -or $Web.Content -notmatch "DQN Training Dashboard") {
     throw "The Nuxt application shell is not reachable."
 }
 

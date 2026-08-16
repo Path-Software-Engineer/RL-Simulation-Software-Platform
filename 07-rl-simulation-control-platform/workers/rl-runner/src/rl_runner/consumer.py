@@ -10,6 +10,7 @@ from typing import Any
 import redis
 from redis.exceptions import ResponseError
 
+from .dqn import DQNConfig, train_dqn
 from .messages import MessageEnvelope, MessageValidationError, new_event
 from .policies import PolicyRegistry, PolicyValidationError
 from .runner import RunRequest, run_episode
@@ -32,6 +33,9 @@ class RunnerConsumer:
         self.consumer = os.getenv("HOSTNAME", "runner-local")[:64]
         self.step_delay_seconds = min(
             max(int(os.getenv("RUNNER_STEP_DELAY_MS", "120")), 0), 1000
+        ) / 1000
+        self.dqn_step_delay_seconds = min(
+            max(int(os.getenv("DQN_STEP_DELAY_MS", "10")), 0), 250
         ) / 1000
 
     def ensure_group(self) -> None:
@@ -114,7 +118,11 @@ class RunnerConsumer:
             seed=int(payload["seed"]),
             max_steps=int(payload["max_steps"]),
         )
+        request.validate(policy)
         self._publish(new_event(envelope, "rl.run.started.v1", {"started_by": self.consumer}))
+        if policy.algorithm == "dqn":
+            self._execute_dqn(envelope, request, policy.training_config)
+            return
         result = run_episode(request, policy, control=self._cooperative_control(envelope))
         self._publish(new_event(envelope, "rl.run.episode-completed.v1", result.as_payload()))
         metrics = (
@@ -141,13 +149,64 @@ class RunnerConsumer:
             )
         )
 
-    def _cooperative_control(self, envelope: MessageEnvelope):
+    def _execute_dqn(
+        self,
+        envelope: MessageEnvelope,
+        request: RunRequest,
+        raw_config: dict[str, Any] | None,
+    ) -> None:
+        if raw_config is None:
+            raise ValueError("DQN training configuration is missing")
+
+        def publish_episode(episode, metrics) -> None:
+            self._publish(
+                new_event(envelope, "rl.run.episode-completed.v1", episode.as_payload())
+            )
+            for metric in metrics:
+                self._publish(
+                    new_event(
+                        envelope,
+                        "rl.run.metric-sampled.v1",
+                        {
+                            "metric": metric.metric,
+                            "value": metric.value,
+                            "unit": metric.unit,
+                            "step": metric.step,
+                        },
+                    )
+                )
+
+        result = train_dqn(
+            request,
+            DQNConfig.from_mapping(raw_config),
+            control=self._cooperative_control(
+                envelope, delay_seconds=self.dqn_step_delay_seconds
+            ),
+            on_episode=publish_episode,
+        )
+        terminal_type = (
+            "rl.run.cancelled.v1"
+            if result.status == "cancelled"
+            else "rl.run.completed.v1"
+        )
+        self._publish(
+            new_event(
+                envelope,
+                terminal_type,
+                {"status": result.status, "terminal_reason": result.terminal_reason},
+            )
+        )
+
+    def _cooperative_control(
+        self, envelope: MessageEnvelope, *, delay_seconds: float | None = None
+    ):
         pause_announced = False
+        effective_delay = self.step_delay_seconds if delay_seconds is None else delay_seconds
 
         def check() -> str:
             nonlocal pause_announced
-            if self.step_delay_seconds:
-                time.sleep(self.step_delay_seconds)
+            if effective_delay:
+                time.sleep(effective_delay)
             state = self.client.get(f"rl.control:{envelope.run_id}") or "run"
             if state == "pause" and not pause_announced:
                 self._publish(

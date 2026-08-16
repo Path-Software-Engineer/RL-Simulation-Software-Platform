@@ -18,7 +18,7 @@ export interface Environment {
 
 export interface Policy {
   id: string
-  algorithm: 'q-learning' | 'sarsa'
+  algorithm: 'q-learning' | 'sarsa' | 'dqn'
   version: string
   artifactUri: string
   sha256: string

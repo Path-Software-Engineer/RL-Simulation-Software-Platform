@@ -68,8 +68,8 @@ export function useControlApi() {
     controlRun: (id: string, action: 'pause' | 'resume' | 'cancel') => request<TrainingRun>(`/api/v1/training-runs/${id}/${action}`, {
       method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }
     }),
-    listEpisodes: (id: string) => request<Episode[]>(`/api/v1/training-runs/${id}/episodes?limit=20`),
-    listMetrics: (id: string) => request<MetricSample[]>(`/api/v1/training-runs/${id}/metrics?limit=50`),
+    listEpisodes: (id: string) => request<Episode[]>(`/api/v1/training-runs/${id}/episodes?limit=100`),
+    listMetrics: (id: string, metric = '') => request<MetricSample[]>(`/api/v1/training-runs/${id}/metrics?limit=200${metric ? `&metric=${encodeURIComponent(metric)}` : ''}`),
     listTransitions: (id: string) => request<Transition[]>(`/api/v1/episodes/${id}/transitions?limit=200`),
     createFeedback: (id: string, category: string, note: string) => request<void>(`/api/v1/episodes/${id}/feedback`, {
       method: 'POST',

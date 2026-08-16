@@ -62,3 +62,27 @@ traceable to an episode.
 idempotent and audited.
 
 **State.** Implemented. **Evidence:** feedback form, HTTP contract and persistence migration.
+
+## US-P7-S2-001 — Observe real DQN training
+
+**Story.** As an RL learner, I want reward, moving average, epsilon and loss aligned by episode so
+that I can distinguish exploration, optimization and outcome signals.
+
+**Acceptance criteria.** A registered DQN run persists 40 samples for each metric family, and every
+chart offers an exact table alternative.
+
+## US-P7-S2-002 — Diagnose behavior, not just reward
+
+**Story.** As a technical reviewer, I want success rate, episode length, action distribution and the
+latest trace so that a single reward curve cannot hide loops, collisions or action collapse.
+
+**Acceptance criteria.** Summary cards derive from persisted samples, the distribution exposes
+counts and percentages, and the latest trace count matches the episode summary.
+
+## US-P7-S2-003 — Understand evidence limits
+
+**Story.** As a portfolio reviewer, I want explicit instability and provenance notes so that I do
+not confuse a completed teaching run with convergence or production readiness.
+
+**Acceptance criteria.** The UI and report state the seed, profile identity and non-convergence
+boundary.

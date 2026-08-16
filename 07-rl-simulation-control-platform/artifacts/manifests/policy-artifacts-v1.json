@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "artifactType": "tabular-policy-set",
+  "artifactType": "registered-agent-profile-set",
   "environmentId": "11111111-1111-4111-8111-111111111101",
   "environmentVersion": "1.0.0",
   "policies": [
@@ -17,11 +17,19 @@
       "version": "1.0.0",
       "uri": "artifact://policies/sarsa-gridworld-v1.json",
       "sha256": "b7043771657ec37f235103485a7375a395431db0b2dc0e39d2070ca4e87aadcb"
+    },
+    {
+      "policyId": "22222222-2222-4222-8222-222222222203",
+      "algorithm": "dqn",
+      "version": "1.0.0",
+      "uri": "artifact://policies/dqn-gridworld-training-v1.json",
+      "sha256": "99902302d7119e631c23d982eba7a06b0135718a81780caa55e68d0732dccac7"
     }
   ],
-  "provenance": "Repository-authored deterministic teaching policies.",
+  "provenance": "Repository-authored deterministic policies and bounded DQN training profile.",
   "limitations": [
     "Validated only in the registered 6x6 environment.",
+    "The DQN profile trains a small seeded educational network; completion is not convergence.",
     "Not evidence of generalization, safety or production readiness."
   ]
 }

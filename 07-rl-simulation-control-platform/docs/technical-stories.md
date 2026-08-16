@@ -85,3 +85,25 @@ release. **Evidence:** `docker-compose.yml`, `infra/docker`, `scripts/run-qualit
 | TS-P7-S1-006 | 004 | WebSocket resync flow |
 | TS-P7-S1-007 | 002, 003, 005 | Nuxt visualizer |
 | TS-P7-S1-008 | all | Compose and quality gate |
+
+## Sprint 2 technical stories
+
+### TS-P7-S2-001 — Version neural training configuration
+
+Hyperparameters are allowlisted and content-addressed rather than accepted from the browser.
+**Evidence:** DQN artifact, policy manifest, SHA-256 registry and migration 0002.
+
+### TS-P7-S2-002 — Emit incremental training evidence
+
+Long runs project durable progress instead of returning one opaque final response. **Evidence:** the
+DQN callback emits an episode plus ten metric events before starting the next episode.
+
+### TS-P7-S2-003 — Bound observability reads
+
+Each chart series remains query-bounded as training history grows. **Evidence:** metric filter enum,
+200-sample cap and one filtered request per dashboard series.
+
+### TS-P7-S2-004 — Preserve honest model interpretation
+
+Quality gates reject non-finite metrics and documentation retains unstable results. **Evidence:**
+the direct 40-episode validator and controlled training report.
