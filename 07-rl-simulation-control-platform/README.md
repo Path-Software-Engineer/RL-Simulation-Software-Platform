@@ -10,6 +10,7 @@ Sprint 1, **Gridworld Agent Visualizer**, is fixed at
 
 - Nuxt/Vue workspace with an accessible Gridworld, policy overlay and episode player.
 - Go/Gin API with public bounded evidence reads, protected operator commands and idempotency.
+- Public portfolio mode replays the latest persisted episode or world-model rollout without credentials.
 - PostgreSQL/TimescaleDB as durable truth and Redis Streams with outbox/inbox/DLQ boundaries.
 - Python runner restricted to registered, SHA-256-verified Q-Learning and SARSA artifacts.
 - Durable `queued → running → succeeded` evidence, cooperative controls and audited feedback.

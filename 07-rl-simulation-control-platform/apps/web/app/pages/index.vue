@@ -40,6 +40,7 @@ const accessToken = ref('')
 const feedbackCategory = ref('clear')
 const feedbackNote = ref('')
 const feedbackState = ref<'idle' | 'sending' | 'sent'>('idle')
+const publicDemoRequest = ref(0)
 let poller: ReturnType<typeof setInterval> | undefined
 
 const environment = computed(() => environments.value.find(item => item.id === selectedEnvironmentId.value))
@@ -101,6 +102,7 @@ const compactMetrics = computed(() => {
   const names = isWorldModelRun.value ? worldMetricNames : trainingMetricNames
   return names.map(name => ({ name, sample: latestMetricSample(name) })).filter(item => item.sample)
 })
+const publicDemoReady = computed(() => transitions.value.length > 0)
 
 const { state: streamState, resync: resyncStream } = useRunStream(activeRunId, api.operatorToken, refreshRun)
 
@@ -151,6 +153,13 @@ function openOperatorAccess() {
   accessToken.value = ''
   error.value = ''
   phase.value = 'locked'
+}
+
+function launchPublicDemo() {
+  if (!publicDemoReady.value || !import.meta.client) return
+  publicDemoRequest.value += 1
+  const target = document.getElementById(isWorldModelRun.value ? 'rollout' : 'episode')
+  target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function loadWorkspace() {
@@ -289,7 +298,7 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
         <form @submit.prevent="unlockWorkspace"><label>Operator token<input v-model="accessToken" type="password" minlength="16" maxlength="128" pattern="[A-Za-z0-9._~-]+" autocomplete="current-password" required></label><button class="button primary" type="submit">Authenticate <span>→</span></button></form>
       </section>
       <section v-if="phase === 'loading'" class="loading-panel" aria-live="polite"><span class="loader" />Reading registered environments, agents and training evidence…</section>
-      <section v-if="!isOperator && phase !== 'locked' && phase !== 'loading'" class="notice public-access" role="status"><strong>Public portfolio mode</strong><span>Persisted runs, episodes, metrics and transitions are available without a token. Write controls remain private.</span><a href="/docs/" target="_blank" rel="noreferrer">Explore Swagger ↗</a></section>
+      <section v-if="!isOperator && phase !== 'locked' && phase !== 'loading'" class="notice public-access" role="status"><strong>Public portfolio mode</strong><span>Persisted runs, episodes, metrics and transitions are available without a token. Write controls remain private.</span><button class="button secondary" type="button" :disabled="!publicDemoReady" @click="launchPublicDemo">{{ publicDemoRequest ? 'Replay public demo' : 'Play public demo' }} <span>→</span></button><a href="/docs/" target="_blank" rel="noreferrer">Explore Swagger ↗</a></section>
 
       <template v-if="phase !== 'loading' && environment && policy">
         <section class="control-panel">
@@ -358,7 +367,7 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
           </div>
         </section>
 
-        <RolloutViewer v-if="isWorldModelRun && worldTransitions.length" id="rollout" :transitions="worldTransitions" @change="currentTransition = $event" />
+        <RolloutViewer v-if="isWorldModelRun && worldTransitions.length" id="rollout" :transitions="worldTransitions" :autoplay-key="publicDemoRequest" @change="currentTransition = $event" />
 
         <section v-if="evidencePolicy && !isWorldModelRun" id="episode" class="workspace-grid">
           <div class="grid-card"><div class="section-heading"><div><p class="eyebrow">Latest episode trace</p><h2>{{ environment.name }}</h2></div><span>{{ environment.rows }}×{{ environment.columns }}</span></div><GridworldGrid :environment="environment" :policy="evidencePolicy" :transition="currentTransition" /></div>
@@ -370,7 +379,7 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
           </aside>
         </section>
 
-        <EpisodePlayer v-if="transitions.length && !isWorldModelRun" :transitions="transitions" @change="currentTransition = $event" />
+        <EpisodePlayer v-if="transitions.length && !isWorldModelRun" :transitions="transitions" :autoplay-key="publicDemoRequest" @change="currentTransition = $event" />
 
         <section id="evidence" class="evidence-grid">
           <article><p class="eyebrow">Interpretation boundary</p><h3>{{ isWorldModelRun ? 'A rollout is not a safe plan.' : 'Deep does not mean stable.' }}</h3><p v-if="isWorldModelRun">The model omits obstacle structure and is evaluated on one registered action sequence. Completion does not establish planning reliability, generalization or safety.</p><p v-else>Reward and loss describe this seeded teaching run. They do not establish convergence, generalization, robustness or real-world safety.</p></article>
