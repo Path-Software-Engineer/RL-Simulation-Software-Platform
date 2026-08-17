@@ -12,9 +12,10 @@
 
 ## Run sequence
 
-1. The operator unlocks the local workspace; Nuxt authenticates REST with Bearer and WebSocket
-   through the registered `rl-run-v1` subprotocol.
-2. Nuxt posts an environment ID, policy ID, seed and maximum steps with an idempotency key.
+1. A visitor reads bounded persisted evidence anonymously; an operator can unlock mutation controls.
+2. Operator Nuxt requests authenticate with Bearer, while WebSocket uses the registered `rl-run-v1`
+   subprotocol. Nuxt posts an environment ID, policy ID, seed and maximum steps with an idempotency
+   key.
 3. Go validates registered records and commits the queued run, audit and outbox row atomically.
 4. The dispatcher publishes `rl.run.requested.v1`; the Python consumer deduplicates it.
 5. The runner verifies policy path containment, identity and SHA-256, then executes the episode.

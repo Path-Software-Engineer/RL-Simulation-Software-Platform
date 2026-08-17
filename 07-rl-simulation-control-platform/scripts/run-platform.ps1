@@ -16,3 +16,4 @@ docker compose ps
 Write-Host "Web:     http://127.0.0.1:3000" -ForegroundColor Cyan
 Write-Host "API:     http://127.0.0.1:8080" -ForegroundColor Cyan
 Write-Host "OpenAPI: http://127.0.0.1:8080/openapi.json" -ForegroundColor Cyan
+Write-Host "Swagger: http://127.0.0.1:8080/docs/" -ForegroundColor Cyan

@@ -49,6 +49,7 @@ main { min-width: 0; }
 .topbar-state { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .73rem; text-transform: capitalize; }
 .topbar-state span { width: 7px; height: 7px; border-radius: 50%; background: var(--subtle); box-shadow: 0 0 0 4px #5f687c14; }
 .topbar-state span[data-state="connected"] { background: var(--green); box-shadow: 0 0 12px var(--green); }
+.topbar-state span[data-state="public"] { background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
 .topbar-state span[data-state="reconnecting"], .topbar-state span[data-state="connecting"] { background: var(--amber); }
 .topbar-actions { display: flex; align-items: center; gap: 16px; }
 .text-button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: .72rem; text-decoration: underline; text-underline-offset: 3px; }
@@ -68,12 +69,18 @@ main { min-width: 0; }
 .notice.error { border-color: #773340; background: #241016; }
 .notice span { color: #d1b1b7; flex: 1; }
 .notice button { border: 0; background: transparent; color: var(--ink); text-decoration: underline; cursor: pointer; }
+.notice.public-access { border-color: #22556a; background: #091a24; }
+.notice.public-access span { color: var(--muted); }
+.notice.public-access a { color: var(--cyan); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.notice.public-access a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .loading-panel { min-height: 180px; display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
 .loader { width: 16px; height: 16px; border: 2px solid #323b50; border-top-color: var(--violet); border-radius: 50%; animation: spin 800ms linear infinite; }
 .auth-panel { margin: 36px clamp(24px, 7vw, 112px) 70px; padding: clamp(24px, 4vw, 42px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .7fr); align-items: end; gap: 48px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(145deg, #0c1323, #090f1c); }
 .auth-panel h2 { margin: 9px 0 12px; font-size: clamp(1.6rem, 3vw, 2.5rem); letter-spacing: -.04em; }
 .auth-panel p:not(.eyebrow) { max-width: 650px; margin: 0; color: var(--muted); line-height: 1.65; }
 .auth-panel code { color: var(--cyan); }
+.auth-panel a { color: var(--cyan); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.auth-panel a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .auth-panel form { display: grid; gap: 14px; }
 
 .control-panel, .run-bar, .workspace-grid, .player, .evidence-grid { margin-left: clamp(24px, 5vw, 72px); margin-right: clamp(24px, 5vw, 72px); }

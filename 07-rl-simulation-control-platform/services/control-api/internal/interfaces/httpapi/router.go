@@ -41,27 +41,35 @@ func NewRouter(service *application.Service, hub *Hub, operatorToken string, all
 	router.GET("/health/live", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "alive"}) })
 	router.GET("/health/ready", server.ready)
 	router.StaticFile("/openapi.json", openAPIPath)
+	registerSwaggerUI(router)
 
 	api := router.Group("/api/v1")
-	api.Use(server.requireBearer())
 	api.GET("/environments", server.listEnvironments)
 	api.GET("/environments/:id", server.getEnvironment)
 	api.GET("/policies", server.listPolicies)
 	api.GET("/policies/:id", server.getPolicy)
-	api.POST("/training-runs", server.createRun)
 	api.GET("/training-runs", server.listRuns)
 	api.GET("/training-runs/:id", server.getRun)
-	api.POST("/training-runs/:id/pause", server.controlRun("pause"))
-	api.POST("/training-runs/:id/resume", server.controlRun("resume"))
-	api.POST("/training-runs/:id/cancel", server.controlRun("cancel"))
 	api.GET("/training-runs/:id/metrics", server.listMetrics)
 	api.GET("/training-runs/:id/episodes", server.listEpisodes)
 	api.GET("/episodes/:id", server.getEpisode)
 	api.GET("/episodes/:id/transitions", server.listTransitions)
-	api.POST("/episodes/:id/feedback", server.createFeedback)
+
+	operator := api.Group("")
+	operator.Use(server.requireBearer())
+	operator.GET("/operator/session", server.operatorSession)
+	operator.POST("/training-runs", server.createRun)
+	operator.POST("/training-runs/:id/pause", server.controlRun("pause"))
+	operator.POST("/training-runs/:id/resume", server.controlRun("resume"))
+	operator.POST("/training-runs/:id/cancel", server.controlRun("cancel"))
+	operator.POST("/episodes/:id/feedback", server.createFeedback)
 	router.GET("/ws/v1/runs/:id", server.subscribeRun)
 	router.NoRoute(func(c *gin.Context) { server.problem(c, domain.ErrNotFound) })
 	return router
+}
+
+func (server *Server) operatorSession(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"role": "operator"})
 }
 
 func (server *Server) ready(c *gin.Context) {

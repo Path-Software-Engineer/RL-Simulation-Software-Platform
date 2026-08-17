@@ -9,7 +9,7 @@ Sprint 1, **Gridworld Agent Visualizer**, is fixed at
 `release/p7-v1.0.0-azure-neon`. The active scope includes:
 
 - Nuxt/Vue workspace with an accessible Gridworld, policy overlay and episode player.
-- Go/Gin control API with local operator authentication, idempotency and bounded queries.
+- Go/Gin API with public bounded evidence reads, protected operator commands and idempotency.
 - PostgreSQL/TimescaleDB as durable truth and Redis Streams with outbox/inbox/DLQ boundaries.
 - Python runner restricted to registered, SHA-256-verified Q-Learning and SARSA artifacts.
 - Durable `queued → running → succeeded` evidence, cooperative controls and audited feedback.
@@ -46,6 +46,7 @@ Local routes:
 
 - Web: `http://127.0.0.1:3000`
 - API readiness: `http://127.0.0.1:8080/health/ready`
+- Swagger UI: `http://127.0.0.1:8080/docs/`
 - OpenAPI: `http://127.0.0.1:8080/openapi.json`
 
 See [Azure + Neon release guide](docs/azure-neon-release.md),

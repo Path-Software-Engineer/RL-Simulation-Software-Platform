@@ -34,7 +34,7 @@ const episodes = ref<Episode[]>([])
 const transitions = ref<Transition[]>([])
 const metrics = ref<MetricSample[]>([])
 const currentTransition = ref<Transition>()
-const phase = ref<'locked' | 'loading' | 'ready' | 'working' | 'error'>('locked')
+const phase = ref<'locked' | 'loading' | 'ready' | 'working' | 'error'>('loading')
 const error = ref('')
 const accessToken = ref('')
 const feedbackCategory = ref('clear')
@@ -59,6 +59,7 @@ const showWorldModelDashboard = computed(() => isWorldModelRun.value || (!run.va
 const canPause = computed(() => run.value?.status === 'running')
 const canResume = computed(() => run.value?.status === 'paused')
 const canCancel = computed(() => run.value && ['queued', 'running', 'pausing', 'paused'].includes(run.value.status))
+const isOperator = computed(() => Boolean(api.operatorToken.value))
 
 const rewardSeries = computed(() => [
   { name: 'Episode reward', color: '#62e8b2', values: metricPoints('episode_reward') },
@@ -123,6 +124,7 @@ async function unlockWorkspace() {
   error.value = ''
   try {
     api.authenticate(accessToken.value)
+    await api.validateOperator()
     accessToken.value = ''
     await loadWorkspace()
     if (phase.value === 'error') {
@@ -140,14 +142,15 @@ async function unlockWorkspace() {
 
 function lockWorkspace() {
   api.clearSession()
-  run.value = null
-  environments.value = []
-  policies.value = []
-  episodes.value = []
-  transitions.value = []
-  metrics.value = []
-  phase.value = 'locked'
+  accessToken.value = ''
   error.value = ''
+  void loadWorkspace()
+}
+
+function openOperatorAccess() {
+  accessToken.value = ''
+  error.value = ''
+  phase.value = 'locked'
 }
 
 async function loadWorkspace() {
@@ -242,8 +245,15 @@ async function submitFeedback() {
   }
 }
 
-onMounted(() => {
-  if (api.restoreSession()) void loadWorkspace()
+onMounted(async () => {
+  if (api.restoreSession()) {
+    try {
+      await api.validateOperator()
+    } catch {
+      api.clearSession()
+    }
+  }
+  await loadWorkspace()
   poller = setInterval(() => {
     if (run.value && !isTerminal.value) void refreshRun().catch(() => undefined)
   }, 1000)
@@ -266,7 +276,7 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
     </aside>
 
     <main id="main">
-      <header class="topbar"><div><small>PROJECT 07 / SPRINT 03</small><strong>World Model Rollout Viewer</strong></div><div class="topbar-actions"><div class="topbar-state"><span :data-state="streamState" />{{ phase === 'locked' ? 'locked' : streamState }}</div><button v-if="phase !== 'locked'" class="text-button" type="button" @click="lockWorkspace">Lock</button></div></header>
+      <header class="topbar"><div><small>PROJECT 07 / SPRINT 03</small><strong>World Model Rollout Viewer</strong></div><div class="topbar-actions"><div class="topbar-state"><span :data-state="isOperator ? streamState : 'public'" />{{ isOperator ? streamState : 'public evidence' }}</div><button v-if="phase !== 'locked'" class="text-button" type="button" @click="isOperator ? lockWorkspace() : openOperatorAccess()">{{ isOperator ? 'Lock controls' : 'Operator access' }}</button></div></header>
 
       <section id="experiment" class="hero model-hero">
         <div><p class="eyebrow">Model-based reinforcement learning observability</p><h1>See the imagined future.<br><span>Measure where it drifts.</span></h1><p class="hero-copy">Fit a registered empirical transition model, compare its autoregressive rollout with real Gridworld transitions and inspect error before trusting a plan.</p></div>
@@ -275,27 +285,28 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
 
       <section v-if="error" class="notice error" role="alert"><strong>Vector could not complete the request.</strong><span>{{ error }}</span><button v-if="phase !== 'locked'" type="button" @click="loadWorkspace">Retry</button></section>
       <section v-if="phase === 'locked'" class="auth-panel" aria-labelledby="auth-title">
-        <div><p class="eyebrow">Local operator boundary</p><h2 id="auth-title">Unlock the controlled workspace.</h2><p>Enter the operator token configured in <code>.env</code>. It stays in this browser tab and is never written to application logs.</p></div>
+        <div><p class="eyebrow">Operator boundary</p><h2 id="auth-title">Unlock write controls.</h2><p>The public workspace already exposes persisted evidence and read-only API operations. Enter the private operator token only to create or control runs and record annotations. It stays in this browser tab and is never written to application logs. <a href="/docs/" target="_blank" rel="noreferrer">Open public Swagger ↗</a></p></div>
         <form @submit.prevent="unlockWorkspace"><label>Operator token<input v-model="accessToken" type="password" minlength="16" maxlength="128" pattern="[A-Za-z0-9._~-]+" autocomplete="current-password" required></label><button class="button primary" type="submit">Authenticate <span>→</span></button></form>
       </section>
       <section v-if="phase === 'loading'" class="loading-panel" aria-live="polite"><span class="loader" />Reading registered environments, agents and training evidence…</section>
+      <section v-if="!isOperator && phase !== 'locked' && phase !== 'loading'" class="notice public-access" role="status"><strong>Public portfolio mode</strong><span>Persisted runs, episodes, metrics and transitions are available without a token. Write controls remain private.</span><a href="/docs/" target="_blank" rel="noreferrer">Explore Swagger ↗</a></section>
 
-      <template v-else-if="environment && policy">
+      <template v-if="phase !== 'loading' && environment && policy">
         <section class="control-panel">
           <div><p class="eyebrow">Controlled experiment</p><h2>Choose a registered execution profile.</h2><p>The world-model profile fits 12 transition examples and compares one fixed rollout with the real environment. DQN and tabular checkpoints remain available.</p></div>
           <div class="field-grid">
             <label>Environment<select v-model="selectedEnvironmentId" :disabled="phase === 'working' || hasActiveRun"><option v-for="item in environments" :key="item.id" :value="item.id">{{ item.name }} · v{{ item.version }}</option></select></label>
             <label>Agent profile<select v-model="selectedPolicyId" :disabled="phase === 'working' || hasActiveRun"><option v-for="item in policies" :key="item.id" :value="item.id">{{ item.algorithm }} · v{{ item.version }}</option></select></label>
-            <button class="button primary" type="button" :disabled="phase === 'working' || hasActiveRun" @click="startRun">{{ phase === 'working' ? 'Queueing run…' : hasActiveRun ? 'Run in progress' : isWorldModelSelected ? 'Run model rollout' : isDqnSelected ? 'Start DQN training' : 'Run controlled episode' }} <span>→</span></button>
+            <button class="button primary" type="button" :disabled="!isOperator || phase === 'working' || hasActiveRun" @click="startRun">{{ !isOperator ? 'Operator access required' : phase === 'working' ? 'Queueing run…' : hasActiveRun ? 'Run in progress' : isWorldModelSelected ? 'Run model rollout' : isDqnSelected ? 'Start DQN training' : 'Run controlled episode' }} <span>→</span></button>
           </div>
         </section>
 
         <section v-if="run" class="run-bar" aria-live="polite">
           <div><p class="eyebrow">Confirmed run</p><strong>{{ run.id.slice(0, 8) }}</strong><StatusPill :status="run.status" /></div>
           <div class="run-controls">
-            <button v-if="canPause" class="button secondary" type="button" @click="control('pause')">Pause runner</button>
-            <button v-if="canResume" class="button secondary" type="button" @click="control('resume')">Resume runner</button>
-            <button v-if="canCancel" class="button danger" type="button" @click="control('cancel')">Cancel run</button>
+            <button v-if="isOperator && canPause" class="button secondary" type="button" @click="control('pause')">Pause runner</button>
+            <button v-if="isOperator && canResume" class="button secondary" type="button" @click="control('resume')">Resume runner</button>
+            <button v-if="isOperator && canCancel" class="button danger" type="button" @click="control('cancel')">Cancel run</button>
             <button v-if="streamState === 'unavailable'" class="button secondary" type="button" @click="resyncStream">Resync with REST</button>
           </div>
         </section>
@@ -364,7 +375,7 @@ onBeforeUnmount(() => { if (poller) clearInterval(poller) })
         <section id="evidence" class="evidence-grid">
           <article><p class="eyebrow">Interpretation boundary</p><h3>{{ isWorldModelRun ? 'A rollout is not a safe plan.' : 'Deep does not mean stable.' }}</h3><p v-if="isWorldModelRun">The model omits obstacle structure and is evaluated on one registered action sequence. Completion does not establish planning reliability, generalization or safety.</p><p v-else>Reward and loss describe this seeded teaching run. They do not establish convergence, generalization, robustness or real-world safety.</p></article>
           <article><p class="eyebrow">Latest persisted samples</p><h3>{{ metrics.length }} metric points loaded</h3><ul><li v-for="item in compactMetrics" :key="item.name"><span>{{ item.name.replaceAll('_', ' ') }}</span><strong>{{ item.sample?.value.toFixed(3) }} {{ item.sample?.unit }}</strong></li></ul></article>
-          <form v-if="latestEpisode" @submit.prevent="submitFeedback"><p class="eyebrow">Episode annotation</p><h3>Record human feedback.</h3><label>Category<select v-model="feedbackCategory"><option value="clear">Clear</option><option value="unexpected">Unexpected</option><option value="loop">Loop</option><option value="collision">Collision</option><option value="other">Other</option></select></label><label>Note<textarea v-model="feedbackNote" maxlength="500" required placeholder="What did you observe?" /></label><button class="button secondary" type="submit" :disabled="feedbackState === 'sending'">{{ feedbackState === 'sent' ? 'Feedback recorded' : 'Save annotation' }}</button></form>
+          <form v-if="latestEpisode && isOperator" @submit.prevent="submitFeedback"><p class="eyebrow">Episode annotation</p><h3>Record human feedback.</h3><label>Category<select v-model="feedbackCategory"><option value="clear">Clear</option><option value="unexpected">Unexpected</option><option value="loop">Loop</option><option value="collision">Collision</option><option value="other">Other</option></select></label><label>Note<textarea v-model="feedbackNote" maxlength="500" required placeholder="What did you observe?" /></label><button class="button secondary" type="submit" :disabled="feedbackState === 'sending'">{{ feedbackState === 'sent' ? 'Feedback recorded' : 'Save annotation' }}</button></form>
         </section>
       </template>
     </main>

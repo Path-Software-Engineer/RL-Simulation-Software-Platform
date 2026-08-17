@@ -339,6 +339,7 @@ Write-Host "OK - Azure + Neon release deployment passed" -ForegroundColor Green
 Write-Host "Web:     $WebUrl"
 Write-Host "API:     $ApiUrl"
 Write-Host "OpenAPI: $ApiUrl/openapi.json"
+Write-Host "Swagger: $ApiUrl/docs/"
 
 $DatabaseUrl = $null
 $DatabaseUrlDirect = $null

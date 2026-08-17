@@ -28,8 +28,9 @@ latest episode trace.
 The third flow must persist one 11-step rollout, expected and predicted state pairs, 11 samples for
 each error series, one training-example count and a final accumulated error of `9.0` cells.
 
-The OpenAPI document remains public locally, while every `/api/v1` route requires Bearer and the
-run WebSocket requires `rl-run-v1` plus the same operator token as its subprotocols.
+The UI, Swagger, OpenAPI document and bounded evidence GET routes are public. Creating or controlling
+runs and recording feedback require Bearer, while the run WebSocket requires `rl-run-v1` plus the
+same operator token as its subprotocols.
 
 ## Inspect failures
 

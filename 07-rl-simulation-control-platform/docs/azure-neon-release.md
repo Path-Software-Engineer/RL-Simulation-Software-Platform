@@ -102,6 +102,7 @@ Successful output contains only public URLs and non-secret evidence:
 OK - Azure + Neon release deployment passed
 Web:     https://...
 API:     https://...
+Swagger UI: https://.../docs/
 OpenAPI: https://.../openapi.json
 ```
 

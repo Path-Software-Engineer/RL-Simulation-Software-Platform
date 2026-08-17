@@ -50,8 +50,9 @@ and portable 30-day retention trigger are migrated; query limits are enforced. *
 
 **Need.** Notify the browser without making an ephemeral socket authoritative.
 
-**Acceptance.** Bearer-protected reads/commands, authenticated subprotocol, origin check, heartbeat,
-bounded channel, reconnect/backoff and REST resync exist.
+**Acceptance.** Bounded evidence reads are public, commands remain Bearer-protected, and the
+authenticated subprotocol, origin check, heartbeat, bounded channel, reconnect/backoff and REST
+resync exist.
 **State:** Implemented. **Evidence:** `hub.go`, router and `useRunStream.ts`.
 
 **User Stories:** US-P7-S1-004.
