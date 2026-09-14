@@ -70,6 +70,10 @@ def main() -> None:
     require(openapi.get("openapi") == "3.1.0", "OpenAPI must remain at 3.1.0")
     require(asyncapi.get("asyncapi") == "3.0.0", "AsyncAPI must remain at 3.0.0")
     require(openapi["info"]["version"] == "0.3.0", "OpenAPI Sprint 3 version is missing")
+    require(
+        openapi.get("servers") == [{"url": "/", "description": "Current application origin"}],
+        "OpenAPI must use the current origin for local and deployed Swagger requests",
+    )
     require(asyncapi["info"]["version"] == "0.3.0", "AsyncAPI Sprint 3 version is missing")
     validate_local_references(openapi)
     validate_local_references(asyncapi)
@@ -80,6 +84,31 @@ def main() -> None:
     require(
         "operatorBearer" in openapi["components"]["securitySchemes"],
         "bearer scheme is missing",
+    )
+    public_reads = (
+        ("/api/v1/environments", "get"),
+        ("/api/v1/environments/{id}", "get"),
+        ("/api/v1/policies", "get"),
+        ("/api/v1/policies/{id}", "get"),
+        ("/api/v1/training-runs", "get"),
+        ("/api/v1/training-runs/{id}", "get"),
+        ("/api/v1/training-runs/{id}/metrics", "get"),
+        ("/api/v1/training-runs/{id}/episodes", "get"),
+        ("/api/v1/episodes/{id}", "get"),
+        ("/api/v1/episodes/{id}/transitions", "get"),
+    )
+    for path, method in public_reads:
+        require(
+            openapi["paths"][path][method].get("security") == [],
+            f"{method.upper()} {path} must remain public read-only evidence",
+        )
+    require(
+        "security" not in openapi["paths"]["/api/v1/training-runs"]["post"],
+        "training commands must inherit operator Bearer security",
+    )
+    require(
+        "security" not in openapi["paths"]["/api/v1/operator/session"]["get"],
+        "operator session validation must inherit Bearer security",
     )
     websocket = openapi["paths"]["/ws/v1/runs/{id}"]["get"]
     require(

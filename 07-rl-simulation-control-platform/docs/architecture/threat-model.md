@@ -7,7 +7,8 @@
 | Policy substitution | Runner / DB | UUID, version and SHA-256 must match the registered artifact |
 | Duplicate command delivery | API / messaging | Idempotency record, transactional outbox and consumer inbox |
 | Oversized request or telemetry | HTTP / streams | Body limits, field bounds, query limits and stream max lengths |
-| Unauthenticated commands | HTTP | Constant-time comparison of an environment-injected Bearer token |
+| Unauthenticated commands | HTTP | Public GET allowlist; mutations require constant-time Bearer comparison |
+| Public evidence overexposure | HTTP | Only bounded registered runs, episodes, metrics and transitions are readable |
 | Cross-origin WebSocket misuse | Experience | Exact origin allowlist, opaque run UUID and authenticated subprotocol |
 | Misleading live status | Experience | Socket carries notification only; every update resyncs from REST |
 | Secret disclosure | Runtime | Environment injection, structured logs and repository secret scan |
@@ -17,7 +18,8 @@
 | Reward interpreted as safety | Product | Explicit evidence boundary in UI, docs and reports |
 | Rollout interpreted as a safe plan | Product | Error, obstacle omission and open-loop drift remain visible |
 
-Authentication is deliberately local and single-operator: it is not an identity provider, RBAC or
-production session service. The token must be changed outside source control, remains in browser
-`sessionStorage`, is compared in constant time and is never emitted by application logs. Public
-exposure still requires a real identity boundary, TLS and secret management beyond Sprint 1.
+Authentication is deliberately single-operator: it is not an identity provider, RBAC or production
+session service. Portfolio evidence reads are public and bounded; creating or controlling runs and
+recording feedback still requires the private token. The token must be changed outside source
+control, remains in browser `sessionStorage`, is compared in constant time and is never emitted by
+application logs.

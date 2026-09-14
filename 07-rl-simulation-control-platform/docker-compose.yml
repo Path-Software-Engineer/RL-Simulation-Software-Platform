@@ -30,6 +30,19 @@ services:
     command: ["psql", "-h", "timescaledb", "-U", "${POSTGRES_USER:-rl_control}", "-d", "${POSTGRES_DB:-rl_control}", "-v", "ON_ERROR_STOP=1", "-f", "/migrations/0001_sprint_01_gridworld.up.sql", "-f", "/migrations/0002_sprint_02_dqn_dashboard.up.sql", "-f", "/migrations/0003_sprint_03_world_model_rollout_viewer.up.sql"]
     restart: "no"
 
+  release-migrate:
+    profiles: ["release-tools"]
+    image: rl-simulation-control-platform-migrate:quality-gate
+    build:
+      context: .
+      dockerfile: infra/docker/migrate.Dockerfile
+    environment:
+      DATABASE_URL_DIRECT: postgres://${POSTGRES_USER:-rl_control}:${POSTGRES_PASSWORD:-local_rl_password}@timescaledb:5432/${POSTGRES_DB:-rl_control}?sslmode=disable
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    restart: "no"
+
   redis:
     image: redis:8.8.0-alpine
     command: ["redis-server", "--appendonly", "yes", "--save", "60", "1", "--maxmemory", "128mb", "--maxmemory-policy", "noeviction"]

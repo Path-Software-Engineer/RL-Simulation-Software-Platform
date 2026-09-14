@@ -26,17 +26,33 @@ function Assert-DockerReady {
     }
 }
 
+function Assert-AzureCliReady {
+    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+        throw "Azure CLI is required to compile the release Bicep files. Run scripts/install-azure-cli-current-user.ps1 and open a new PowerShell."
+    }
+}
+
 $Python = Resolve-Python
 $AsyncApiCliImage = "asyncapi/cli:6.0.2@sha256:8d74506cc69f650b7b165988221d8b54af5f8cc476a8fdafbde652816f7ace53"
 $Started = $false
 try {
     Assert-DockerReady
+    Assert-AzureCliReady
     Write-Host "[1/8] Validating versioned contracts and artifacts"
     Invoke-Gate "OpenAPI / AsyncAPI / JSON Schema" { & $Python scripts/validate-contracts.py }
     Invoke-Gate "Artifact identity and SHA-256" { & $Python scripts/verify-artifacts.py }
     Invoke-Gate "Direct deterministic runner" { & $Python scripts/direct-runner-check.py }
     Invoke-Gate "Direct bounded DQN trainer" { & $Python scripts/direct-dqn-check.py }
     Invoke-Gate "Direct bounded world-model rollout" { & $Python scripts/direct-world-model-check.py }
+    Invoke-Gate "Azure + Neon release assets" { & $Python scripts/validate-azure-release.py }
+    Invoke-Gate "Formal Azure Bicep compile" {
+        az bicep install --only-show-errors
+        if ($LASTEXITCODE -ne 0) { throw "Bicep installation failed." }
+        az bicep build --file infra/azure/foundation.bicep --stdout --only-show-errors | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Foundation Bicep compile failed." }
+        az bicep build --file infra/azure/workloads.bicep --stdout --only-show-errors | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Workloads Bicep compile failed." }
+    }
     Invoke-Gate "Repository UTF-8, whitespace and secret hygiene" { & $Python scripts/check-repository-hygiene.py }
     Invoke-Gate "Python syntax" { & $Python -m compileall -q workers/rl-runner/src scripts }
 
@@ -87,10 +103,18 @@ try {
     Write-Host "[6/8] Validating Docker Compose and application images"
     Invoke-Gate "Docker Compose config" { docker compose config --quiet }
     Invoke-Gate "Docker Compose build" { docker compose build control-api rl-runner }
+    Invoke-Gate "Neon migration image" { docker build --file infra/docker/migrate.Dockerfile --tag rl-simulation-control-platform-migrate:quality-gate . }
+    Invoke-Gate "Same-origin gateway image" { docker build --file infra/docker/gateway.Dockerfile --tag rl-simulation-control-platform-gateway:quality-gate . }
 
     Write-Host "[7/8] Running the real cross-layer acceptance flow"
     Invoke-Gate "Start healthy platform" { docker compose up --detach --wait --wait-timeout 240 }
     $Started = $true
+    Invoke-Gate "Release migration image against local TimescaleDB" {
+        docker compose --profile release-tools run --rm release-migrate
+    }
+    Invoke-Gate "Release migration idempotency" {
+        docker compose --profile release-tools run --rm release-migrate
+    }
     & "$PSScriptRoot\smoke-test.ps1"
     & "$PSScriptRoot\smoke-test-sprint-02.ps1"
     & "$PSScriptRoot\smoke-test-sprint-03.ps1"
@@ -103,7 +127,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Staged Git whitespace check failed." }
     }
     Invoke-Gate "Repository hygiene recheck" { & $Python scripts/check-repository-hygiene.py }
-    Write-Host "OK - Project 07 Sprint 3 quality gate passed" -ForegroundColor Green
+    Write-Host "OK - Project 07 local release-candidate quality gate passed" -ForegroundColor Green
 } finally {
     if ($Started -and -not $KeepRunning) { docker compose down --remove-orphans | Out-Null }
 }

@@ -12,9 +12,10 @@
 
 ## Run sequence
 
-1. The operator unlocks the local workspace; Nuxt authenticates REST with Bearer and WebSocket
-   through the registered `rl-run-v1` subprotocol.
-2. Nuxt posts an environment ID, policy ID, seed and maximum steps with an idempotency key.
+1. A visitor reads bounded persisted evidence anonymously; an operator can unlock mutation controls.
+2. Operator Nuxt requests authenticate with Bearer, while WebSocket uses the registered `rl-run-v1`
+   subprotocol. Nuxt posts an environment ID, policy ID, seed and maximum steps with an idempotency
+   key.
 3. Go validates registered records and commits the queued run, audit and outbox row atomically.
 4. The dispatcher publishes `rl.run.requested.v1`; the Python consumer deduplicates it.
 5. The runner verifies policy path containment, identity and SHA-256, then executes the episode.
@@ -31,10 +32,17 @@
 - Pause/cancel are cooperative. The UI shows intermediate states until the runner confirms them.
 - Query limits prevent unbounded telemetry responses; WebSocket never streams every transition.
 
-## Deployment profile
+## Deployment profiles
 
-Sprint 1 is a local Docker Compose release. No public cloud resource is created by this sprint.
-The topology is intentionally portable and has no secret or provider-specific dependency.
+The three sprint checkpoints use local Docker Compose and create no public cloud resource. The
+release profile maps the same boundaries to one HTTP-activated Azure Container App and ACR, with
+Neon PostgreSQL/TimescaleDB as durable truth. Caddy, Nuxt, Go, Python and a transient Redis sidecar
+share one replica that scales completely to zero; migrations execute as a manual,
+checksum-protected Container Apps Job.
+
+The Go API uses Neon's pooled connection while migrations use the direct endpoint. Redis remains a
+stream transport, never the durable source of truth. See
+`ADR-005-zero-cost-azure-container-apps-and-neon.md` and `docs/azure-neon-release.md`.
 
 ## Sprint 2 DQN flow
 

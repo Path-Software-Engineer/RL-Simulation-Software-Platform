@@ -1,14 +1,16 @@
 # 07-rl-simulation-control-platform
 
-## Current implementation status — Sprint 3
+## Current implementation status — Azure + Neon release candidate
 
 Sprint 1, **Gridworld Agent Visualizer**, is fixed at
 `v0.1.0-sprint-01-gridworld-agent-visualizer`; Sprint 2, **DQN Training Dashboard**, is fixed at
-`v0.2.0-sprint-02-dqn-training-dashboard`. Sprint 3, **World Model Rollout Viewer**, is implemented
-on `sprint/p7-s3-world-model-rollout-viewer`. The active scope includes:
+`v0.2.0-sprint-02-dqn-training-dashboard`; Sprint 3, **World Model Rollout Viewer**, is fixed at
+`v0.3.0-sprint-03-world-model-rollout-viewer`. The release work continues on
+`release/p7-v1.0.0-azure-neon`. The active scope includes:
 
 - Nuxt/Vue workspace with an accessible Gridworld, policy overlay and episode player.
-- Go/Gin control API with local operator authentication, idempotency and bounded queries.
+- Go/Gin API with public bounded evidence reads, protected operator commands and idempotency.
+- Public portfolio mode replays the latest persisted episode or world-model rollout without credentials.
 - PostgreSQL/TimescaleDB as durable truth and Redis Streams with outbox/inbox/DLQ boundaries.
 - Python runner restricted to registered, SHA-256-verified Q-Learning and SARSA artifacts.
 - Durable `queued → running → succeeded` evidence, cooperative controls and audited feedback.
@@ -23,6 +25,10 @@ on `sprint/p7-s3-world-model-rollout-viewer`. The active scope includes:
   states, per-step Manhattan error, accumulated error and risk metrics persisted end to end.
 - A responsive next-state comparison, horizontal rollout inspector, exact table, error chart and
   planning-risk cards.
+- One scale-to-zero Azure Container App, free-grant ACR and managed-identity image pulls.
+- A transient same-replica Redis Streams transport and Neon PostgreSQL with distinct pooled runtime
+  and direct migration connections; no Azure Managed Redis or stored Log Analytics.
+- An atomic migration Job, immutable ACR builds and a public three-profile release smoke.
 
 The registered deterministic Q-Learning oracle reaches the goal in **10 transitions**, with
 **0 collisions** and **9.64 total reward**. This validates the controlled teaching fixture only;
@@ -41,9 +47,11 @@ Local routes:
 
 - Web: `http://127.0.0.1:3000`
 - API readiness: `http://127.0.0.1:8080/health/ready`
+- Swagger UI: `http://127.0.0.1:8080/docs/`
 - OpenAPI: `http://127.0.0.1:8080/openapi.json`
 
-See [Sprint 3 evidence](docs/sprints/sprint-03-world-model-rollout-viewer/README.md),
+See [Azure + Neon release guide](docs/azure-neon-release.md),
+[Sprint 3 evidence](docs/sprints/sprint-03-world-model-rollout-viewer/README.md),
 [architecture](docs/architecture/architecture.md), [runbook](docs/runbook.md),
 [user stories](docs/user-stories.md) and [technical stories](docs/technical-stories.md).
 
@@ -58,8 +66,9 @@ and accumulates **9.00 cells of Manhattan error**. This exposes a planning limit
 evidence of reliable planning or generalization.
 
 > Evidence boundary: all three sprints are tagged technical checkpoints. The complete Sprint 3
-> containerized gate and three live cross-layer smokes passed on 2026-08-16. Independent browser
-> captures, Azure deployment and Neon connectivity are not included in that evidence.
+> containerized gate and three live cross-layer smokes passed on 2026-08-16. Azure/Neon release
+> assets are present, but provisioning and public acceptance are not evidence until the authenticated
+> deployment flow succeeds.
 
 ---
 
@@ -803,10 +812,11 @@ Sin responsabilidades mezcladas
 
 # 🚀 Estado actual
 
-Los tres sprints están entregados como **checkpoints técnicos versionados**. Sprint 3 incorpora
-artefacto empírico versionado, migración 0003, persistencia de estado predicho y error, contratos
-0.3, visor Nuxt y smoke cross-layer. El gate containerizado completo pasó el 2026-08-16; Azure y
-Neon pertenecen a la fase de release y no se atribuyen al tag técnico.
+Los tres sprints están entregados como **checkpoints técnicos versionados**. La rama release añade
+Azure Container Apps con escala total a cero, ACR cubierto por el grant inicial, Redis transitorio
+en la misma réplica, migración atómica y enlace seguro con Neon. El gate
+containerizado de Sprint 3 pasó el 2026-08-16; el despliegue público permanece explícitamente
+pendiente hasta ejecutar la aceptación cloud con una sesión Azure autenticada.
 
 ---
 
@@ -848,6 +858,16 @@ Rollout viewer y tabla accesible implementados
 Labs y ADR documentados
 Gate containerizado y tres smokes aprobados el 2026-08-16
 Tag técnico creado; Azure y Neon quedan para la rama release
+```
+
+## Release Azure + Neon
+
+```txt
+Topología Bicep de gasto cero y cinco imágenes inmutables implementadas
+Migración Neon directa, transaccional y protegida por SHA-256 implementada
+API Neon pooled y Redis transitorio interno preparados mediante secretos
+Smoke remoto de los tres perfiles implementado
+Aprovisionamiento real y URLs públicas pendientes de sesión Azure autenticada
 ```
 
 ---

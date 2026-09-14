@@ -117,10 +117,9 @@ CREATE TABLE metric_samples (
 
 SELECT create_hypertable('metric_samples', by_range('sampled_at'), if_not_exists => TRUE);
 
-CREATE MATERIALIZED VIEW run_metric_hourly
-WITH (timescaledb.continuous) AS
+CREATE VIEW run_metric_hourly AS
 SELECT
-  time_bucket(INTERVAL '1 hour', sampled_at) AS bucket,
+  date_trunc('hour', sampled_at) AS bucket,
   run_id,
   metric,
   AVG(value) AS average_value,
@@ -128,18 +127,23 @@ SELECT
   MAX(value) AS maximum_value,
   COUNT(*) AS sample_count
 FROM metric_samples
-GROUP BY bucket, run_id, metric
-WITH NO DATA;
+GROUP BY date_trunc('hour', sampled_at), run_id, metric;
 
-SELECT add_continuous_aggregate_policy(
-  'run_metric_hourly',
-  start_offset => INTERVAL '7 days',
-  end_offset => INTERVAL '10 minutes',
-  schedule_interval => INTERVAL '1 hour',
-  if_not_exists => TRUE
-);
+CREATE FUNCTION prune_expired_metric_samples()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  DELETE FROM metric_samples
+  WHERE sampled_at < NOW() - INTERVAL '30 days';
+  RETURN NULL;
+END;
+$$;
 
-SELECT add_retention_policy('metric_samples', INTERVAL '30 days', if_not_exists => TRUE);
+CREATE TRIGGER metric_samples_retention
+AFTER INSERT ON metric_samples
+FOR EACH STATEMENT
+EXECUTE FUNCTION prune_expired_metric_samples();
 
 CREATE TABLE feedback_annotations (
   id UUID PRIMARY KEY,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Transition } from '~/types/api'
 
-const props = defineProps<{ transitions: Transition[] }>()
+const props = defineProps<{ transitions: Transition[]; autoplayKey?: number }>()
 const emit = defineEmits<{ change: [transition: Transition | undefined] }>()
 const index = ref(0)
 const speed = ref(800)
@@ -14,16 +14,22 @@ function step(delta: number) {
   index.value = Math.max(0, Math.min(index.value + delta, Math.max(props.transitions.length - 1, 0)))
   publish()
 }
-function stop() { if (timer) clearInterval(timer); playing.value = false }
-function toggle() {
-  if (playing.value) return stop()
+function stop() {
+  if (timer) clearInterval(timer)
+  timer = undefined
+  playing.value = false
+}
+function start() {
+  stop()
   playing.value = true
   timer = setInterval(() => {
     if (index.value >= props.transitions.length - 1) return stop()
     step(1)
   }, speed.value)
 }
+function toggle() { if (playing.value) return stop(); start() }
 watch(() => props.transitions, () => { index.value = 0; stop(); publish() })
+watch(() => props.autoplayKey, (key) => { if (key) { index.value = 0; publish(); start() } })
 watch(speed, () => { if (playing.value) { stop(); toggle() } })
 onBeforeUnmount(stop)
 </script>

@@ -28,8 +28,9 @@ latest episode trace.
 The third flow must persist one 11-step rollout, expected and predicted state pairs, 11 samples for
 each error series, one training-example count and a final accumulated error of `9.0` cells.
 
-The OpenAPI document remains public locally, while every `/api/v1` route requires Bearer and the
-run WebSocket requires `rl-run-v1` plus the same operator token as its subprotocols.
+The UI, Swagger, OpenAPI document and bounded evidence GET routes are public. Creating or controlling
+runs and recording feedback require Bearer, while the run WebSocket requires `rl-run-v1` plus the
+same operator token as its subprotocols.
 
 ## Inspect failures
 
@@ -65,3 +66,21 @@ must not be inferred from the containerized gate.
 The Sprint 3 technical delivery tag is `v0.3.0-sprint-03-world-model-rollout-viewer`. Its complete
 containerized gate passed on 2026-08-16. Azure deployment and Neon connectivity require separate
 release evidence and must not be inferred from this tag.
+
+## Azure + Neon release acceptance
+
+Follow [the Azure + Neon release guide](azure-neon-release.md). Cloud acceptance requires all of
+the following in one traceable run:
+
+- Bicep provisioning plus five local Docker builds and immutable ACR pushes succeed from a clean
+  Git commit; the free-subscription path does not use ACR Tasks.
+- The migration Job reaches `Succeeded` through Neon's direct TLS endpoint.
+- API readiness confirms Neon and the same-replica transient Redis transport are reachable.
+- Public Web, API and OpenAPI routes use HTTPS; the run stream uses WSS.
+- The DQN acceptance allows up to five minutes for 40 episodes and 400 metrics to be projected
+  through the scale-to-zero replica into Neon, while reporting progress every ten seconds.
+- Sprint 1, Sprint 2 and Sprint 3 remote smokes all pass against durable cloud state.
+- The Container App reports `minReplicas: 0`, `maxReplicas: 1`; no Managed Redis or Log Analytics
+  resource exists in the release resource group.
+
+A created Azure resource, a healthy container or an HTTP 200 alone is incomplete release evidence.

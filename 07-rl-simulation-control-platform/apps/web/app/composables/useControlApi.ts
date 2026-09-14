@@ -33,14 +33,16 @@ export function useControlApi() {
   }
 
   async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    if (!operatorToken.value) throw new Error('Operator authentication is required.')
+    const method = (options.method ?? 'GET').toUpperCase()
+    if (method !== 'GET' && !operatorToken.value) {
+      throw new Error('Operator authentication is required for commands.')
+    }
+    const headers = new Headers(options.headers)
+    headers.set('Accept', 'application/json')
+    if (operatorToken.value) headers.set('Authorization', `Bearer ${operatorToken.value}`)
     const response = await fetch(`${base}${path}`, {
       ...options,
-      headers: {
-        Accept: 'application/json',
-        ...options.headers,
-        Authorization: `Bearer ${operatorToken.value}`
-      }
+      headers
     })
     if (!response.ok) {
       const fallback: ProblemDetails = { title: `Request failed with ${response.status}`, status: response.status }
@@ -56,6 +58,7 @@ export function useControlApi() {
     authenticate,
     restoreSession,
     clearSession,
+    validateOperator: () => request<{ role: string }>('/api/v1/operator/session'),
     listEnvironments: () => request<Environment[]>('/api/v1/environments'),
     listPolicies: () => request<Policy[]>('/api/v1/policies'),
     listRuns: () => request<{ items: TrainingRun[] }>('/api/v1/training-runs?limit=20'),
