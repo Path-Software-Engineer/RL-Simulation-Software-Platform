@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "3.0",
+  "policyId": "22222222-2222-4222-8222-222222222204",
+  "algorithm": "world-model",
+  "version": "1.0.0",
+  "environmentId": "11111111-1111-4111-8111-111111111101",
+  "observationSpace": "Discrete(36)",
+  "actionSpace": ["up", "right", "down", "left"],
+  "provenance": "Repository-authored empirical action-delta model fitted from 12 versioned Gridworld transitions.",
+  "actionByState": {},
+  "worldModel": {
+    "modelType": "empirical-action-delta",
+    "trainingExamples": [
+      {"state": {"row": 5, "column": 5}, "action": "up", "nextState": {"row": 4, "column": 5}},
+      {"state": {"row": 4, "column": 4}, "action": "up", "nextState": {"row": 3, "column": 4}},
+      {"state": {"row": 3, "column": 2}, "action": "up", "nextState": {"row": 2, "column": 2}},
+      {"state": {"row": 5, "column": 0}, "action": "right", "nextState": {"row": 5, "column": 1}},
+      {"state": {"row": 5, "column": 1}, "action": "right", "nextState": {"row": 5, "column": 2}},
+      {"state": {"row": 4, "column": 2}, "action": "right", "nextState": {"row": 4, "column": 3}},
+      {"state": {"row": 0, "column": 0}, "action": "down", "nextState": {"row": 1, "column": 0}},
+      {"state": {"row": 2, "column": 2}, "action": "down", "nextState": {"row": 3, "column": 2}},
+      {"state": {"row": 3, "column": 5}, "action": "down", "nextState": {"row": 4, "column": 5}},
+      {"state": {"row": 0, "column": 5}, "action": "left", "nextState": {"row": 0, "column": 4}},
+      {"state": {"row": 3, "column": 3}, "action": "left", "nextState": {"row": 3, "column": 2}},
+      {"state": {"row": 5, "column": 4}, "action": "left", "nextState": {"row": 5, "column": 3}}
+    ],
+    "rolloutActions": ["right", "up", "right", "up", "up", "right", "right", "up", "right", "up", "up"]
+  },
+  "limitations": [
+    "The model learns only average action displacement and has no obstacle representation.",
+    "Rollout completion is evidence of execution, not planning reliability, generalization or safety."
+  ]
+}

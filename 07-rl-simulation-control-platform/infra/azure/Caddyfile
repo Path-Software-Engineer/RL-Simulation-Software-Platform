@@ -1,0 +1,17 @@
+{
+	auto_https off
+	admin off
+}
+
+:8088 {
+	encode zstd gzip
+
+	@control_api path /health/* /openapi.json /docs /docs/ /docs/* /api/v1/* /ws/*
+	handle @control_api {
+		reverse_proxy 127.0.0.1:8080
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}

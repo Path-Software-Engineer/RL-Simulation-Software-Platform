@@ -1,0 +1,138 @@
+# Sprint 1 Technical Stories
+
+## TS-P7-S1-001 — Versioned environment and policy registry
+
+**Need.** Reject arbitrary adapters while retaining reproducible RL semantics.
+
+**Acceptance.** UUID/version/space compatibility, SHA-256 and provenance are validated. **State:**
+Implemented. **Evidence:** `artifacts/`, database seeds, `PolicyRegistry`.
+
+**User Stories:** US-P7-S1-001, US-P7-S1-003.
+
+## TS-P7-S1-002 — Durable lifecycle and idempotent control API
+
+**Need.** Keep state changes transactional and auditable.
+
+**Acceptance.** Domain transitions, request hashes, audit rows and problem details are stable.
+**State:** Implemented. **Evidence:** Go domain/application/Postgres packages and OpenAPI.
+
+**User Stories:** US-P7-S1-001, US-P7-S1-004, US-P7-S1-006.
+
+## TS-P7-S1-003 — Real episode runner outside HTTP
+
+**Need.** Execute the controlled RL workload without tying it to an API request.
+
+**Acceptance.** A hash-verified Q-Learning/SARSA policy runs in Python and returns real transitions.
+**State:** Implemented. **Evidence:** `workers/rl-runner/src`, pytest suite, direct runner check.
+
+**User Stories:** US-P7-S1-001, US-P7-S1-002, US-P7-S1-005.
+
+## TS-P7-S1-004 — Reliable Redis Streams boundary
+
+**Need.** Tolerate duplicate delivery and malformed messages.
+
+**Acceptance.** Versioned envelopes, consumer groups, outbox, inbox, retries and bounded DLQ exist.
+**State:** Implemented. **Evidence:** AsyncAPI/schemas, dispatcher, consumer and projector.
+
+**User Stories:** US-P7-S1-001, US-P7-S1-004.
+
+## TS-P7-S1-005 — Temporal episode persistence
+
+**Need.** Preserve ordered trajectory and sampled metrics without unbounded reads.
+
+**Acceptance.** Episode/transition constraints, a Timescale hypertable, a live hourly aggregate view
+and portable 30-day retention trigger are migrated; query limits are enforced. **State:** Implemented.
+**Evidence:** migration and query API.
+
+**User Stories:** US-P7-S1-002, US-P7-S1-005.
+
+## TS-P7-S1-006 — Confirmed-state WebSocket projection
+
+**Need.** Notify the browser without making an ephemeral socket authoritative.
+
+**Acceptance.** Bounded evidence reads are public, commands remain Bearer-protected, and the
+authenticated subprotocol, origin check, heartbeat, bounded channel, reconnect/backoff and REST
+resync exist.
+**State:** Implemented. **Evidence:** `hub.go`, router and `useRunStream.ts`.
+
+**User Stories:** US-P7-S1-004.
+
+## TS-P7-S1-007 — Accessible episode visualizer
+
+**Need.** Explain policy and trajectory across desktop, tablet and mobile.
+
+**Acceptance.** Semantic grid cells, textual legend, keyboard focus, reduced motion, responsive
+layout and loading/error states exist. **State:** Implemented; visual review remains an acceptance
+gate. **Evidence:** Nuxt components, CSS and component tests.
+
+**User Stories:** US-P7-S1-002, US-P7-S1-003, US-P7-S1-005.
+
+## TS-P7-S1-008 — Reproducible local integration and quality gate
+
+**Need.** Prove the cross-layer behavior rather than isolated compilation.
+
+**Acceptance.** Pinned images, health checks, static/formal validators, unit suites and exact live
+episode smoke run in one gate. **State:** Implemented; execution evidence must be recorded before
+release. **Evidence:** `docker-compose.yml`, `infra/docker`, `scripts/run-quality-gate.ps1`.
+
+**User Stories:** all Sprint 1 stories.
+
+| Technical Story | Related User Stories | Primary evidence |
+|---|---|---|
+| TS-P7-S1-001 | 001, 003 | Artifacts and registry |
+| TS-P7-S1-002 | 001, 004, 006 | Go API and migration |
+| TS-P7-S1-003 | 001, 002, 005 | Python runner |
+| TS-P7-S1-004 | 001, 004 | AsyncAPI and Redis consumers |
+| TS-P7-S1-005 | 002, 005 | Timescale migration |
+| TS-P7-S1-006 | 004 | WebSocket resync flow |
+| TS-P7-S1-007 | 002, 003, 005 | Nuxt visualizer |
+| TS-P7-S1-008 | all | Compose and quality gate |
+
+## Sprint 2 technical stories
+
+### TS-P7-S2-001 — Version neural training configuration
+
+Hyperparameters are allowlisted and content-addressed rather than accepted from the browser.
+**Evidence:** DQN artifact, policy manifest, SHA-256 registry and migration 0002.
+
+### TS-P7-S2-002 — Emit incremental training evidence
+
+Long runs project durable progress instead of returning one opaque final response. **Evidence:** the
+DQN callback emits an episode plus ten metric events before starting the next episode.
+
+### TS-P7-S2-003 — Bound observability reads
+
+Each chart series remains query-bounded as training history grows. **Evidence:** metric filter enum,
+200-sample cap and one filtered request per dashboard series.
+
+### TS-P7-S2-004 — Preserve honest model interpretation
+
+Quality gates reject non-finite metrics and documentation retains unstable results. **Evidence:**
+the direct 40-episode validator and controlled training report.
+
+## Sprint 3 technical stories
+
+### TS-P7-S3-001 — Version transition-model inputs
+
+Examples and rollout actions are content-addressed, bounded and allowlisted instead of supplied by
+the browser. **Evidence:** world-model artifact, manifest, registry validation and migration 0003.
+
+### TS-P7-S3-002 — Execute model and environment together
+
+The worker fits empirical action deltas and applies every planned action to both its predicted
+state and the real Gridworld. **Evidence:** `world_model.py`, direct validator and unit tests.
+
+### TS-P7-S3-003 — Preserve comparison evidence
+
+Nullable transition columns retain predicted states, model identity and errors without changing
+the original tabular/DQN response contract. **Evidence:** migration 0003, projector and OpenAPI 0.3.
+
+### TS-P7-S3-004 — Present accessible rollout risk
+
+The viewer combines labeled grids, semantic buttons, exact table values and an accessible error
+chart. **Evidence:** `WorldModelComparison.vue`, `RolloutViewer.vue` and responsive CSS.
+
+### TS-P7-S3-005 — Prove cross-layer regression safety
+
+The Sprint 3 gate executes the tabular, DQN and world-model smokes against the same Compose stack.
+**Evidence:** `direct-world-model-check.py`, `smoke-test-sprint-03.ps1` and quality gate.

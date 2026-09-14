@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paths.dev/schemas/rl/run-requested-v1.schema.json",
+  "title": "rl.run.requested.v1 payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["environment_id", "environment_version", "policy_id", "policy_algorithm", "policy_sha256", "seed", "max_steps"],
+  "properties": {
+    "environment_id": {"type": "string", "format": "uuid"},
+    "environment_version": {"const": "1.0.0"},
+    "policy_id": {"type": "string", "format": "uuid"},
+    "policy_algorithm": {"enum": ["q-learning", "sarsa"]},
+    "policy_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+    "max_steps": {"type": "integer", "minimum": 1, "maximum": 200}
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paths.dev/schemas/rl/run-requested-message-v1.schema.json",
+  "allOf": [
+    {"$ref": "./message-envelope-v1.schema.json"},
+    {"type": "object", "properties": {"message_type": {"const": "rl.run.requested.v1"}, "payload": {"$ref": "./run-requested-v1.schema.json"}}}
+  ]
+}

@@ -1,0 +1,23 @@
+07-rl-simulation-control-platform/
+|-- apps/web/                         Nuxt/Vue experience
+|-- artifacts/
+|   |-- manifests/                    versioned environment/policy manifests
+|   `-- policies/                     tabular, DQN and empirical world-model profiles
+|-- contracts/
+|   |-- events/                       AsyncAPI, JSON Schema, examples
+|   `-- http/                         OpenAPI and request examples
+|-- database/migrations/              PostgreSQL/TimescaleDB schema
+|-- docs/
+|   |-- architecture/                 system, ADRs and threat model
+|   `-- sprints/                      Sprint 1, Sprint 2 and Sprint 3 week evidence
+|-- infra/docker/                     pinned application Dockerfiles
+|-- infra/azure/                      zero-cost Azure Container Apps and Neon release IaC
+|-- labs/                             experimental boundary notes
+|-- reports/sprint-01/                tabular control evidence
+|-- reports/sprint-02/                DQN training evidence and demo
+|-- reports/sprint-03/                rollout error evidence and demo
+|-- scripts/                          setup, no-admin Azure CLI, smoke, cloud deploy and quality gate
+|-- services/control-api/             Go/Gin control plane
+|-- workers/rl-runner/                Python execution boundary
+|-- docker-compose.yml
+`-- README.md

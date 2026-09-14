@@ -1,5 +1,78 @@
 # 07-rl-simulation-control-platform
 
+## Current implementation status — Azure + Neon release candidate
+
+Sprint 1, **Gridworld Agent Visualizer**, is fixed at
+`v0.1.0-sprint-01-gridworld-agent-visualizer`; Sprint 2, **DQN Training Dashboard**, is fixed at
+`v0.2.0-sprint-02-dqn-training-dashboard`; Sprint 3, **World Model Rollout Viewer**, is fixed at
+`v0.3.0-sprint-03-world-model-rollout-viewer`. The release work continues on
+`release/p7-v1.0.0-azure-neon`. The active scope includes:
+
+- Nuxt/Vue workspace with an accessible Gridworld, policy overlay and episode player.
+- Go/Gin API with public bounded evidence reads, protected operator commands and idempotency.
+- Public portfolio mode replays the latest persisted episode or world-model rollout without credentials.
+- PostgreSQL/TimescaleDB as durable truth and Redis Streams with outbox/inbox/DLQ boundaries.
+- Python runner restricted to registered, SHA-256-verified Q-Learning and SARSA artifacts.
+- Durable `queued → running → succeeded` evidence, cooperative controls and audited feedback.
+- OpenAPI 3.1, AsyncAPI 3.0, JSON Schema, ADRs, threat model, runbook and sprint evidence.
+- A seeded one-hidden-layer DQN with replay buffer, epsilon-greedy exploration and target sync.
+- Forty bounded training episodes with reward, moving average, loss, epsilon, success and action
+  telemetry persisted through Redis Streams into TimescaleDB.
+- A responsive Nuxt observatory with accessible SVG charts, exact data tables, progress, summary
+  cards and action distribution.
+- A SHA-256-verified empirical action-delta model fitted from 12 versioned transition examples.
+- One 11-step autoregressive rollout compared against real Gridworld transitions, with predicted
+  states, per-step Manhattan error, accumulated error and risk metrics persisted end to end.
+- A responsive next-state comparison, horizontal rollout inspector, exact table, error chart and
+  planning-risk cards.
+- One scale-to-zero Azure Container App, free-grant ACR and managed-identity image pulls.
+- A transient same-replica Redis Streams transport and Neon PostgreSQL with distinct pooled runtime
+  and direct migration connections; no Azure Managed Redis or stored Log Analytics.
+- An atomic migration Job, immutable ACR builds and a public three-profile release smoke.
+
+The registered deterministic Q-Learning oracle reaches the goal in **10 transitions**, with
+**0 collisions** and **9.64 total reward**. This validates the controlled teaching fixture only;
+it is not a claim of generalization or production readiness.
+
+Run the complete local acceptance gate from the project directory:
+
+```powershell
+Copy-Item .env.example .env
+# Replace OPERATOR_TOKEN before sharing the workspace.
+.\scripts\setup.ps1
+.\scripts\run-quality-gate.ps1 -KeepRunning
+```
+
+Local routes:
+
+- Web: `http://127.0.0.1:3000`
+- API readiness: `http://127.0.0.1:8080/health/ready`
+- Swagger UI: `http://127.0.0.1:8080/docs/`
+- OpenAPI: `http://127.0.0.1:8080/openapi.json`
+
+See [Azure + Neon release guide](docs/azure-neon-release.md),
+[Sprint 3 evidence](docs/sprints/sprint-03-world-model-rollout-viewer/README.md),
+[architecture](docs/architecture/architecture.md), [runbook](docs/runbook.md),
+[user stories](docs/user-stories.md) and [technical stories](docs/technical-stories.md).
+
+The direct Sprint 2 seed-11 profile completes 40 real episodes and 400 metric samples. Its best
+episode reward is **7.64**, final 10-episode moving average is **-33.13** and success rate is
+**37.5%**. Those deliberately modest results demonstrate observability and instability; they do
+not establish convergence or generalization.
+
+The direct Sprint 3 profile uses 12 observed transitions and an 11-action plan. The real path
+reaches the goal with one obstacle collision, while the empirical model first diverges at step 2
+and accumulates **9.00 cells of Manhattan error**. This exposes a planning limitation; it is not
+evidence of reliable planning or generalization.
+
+> Evidence boundary: all three sprints are tagged technical checkpoints. The complete Sprint 3
+> containerized gate and three live cross-layer smokes passed on 2026-08-16. Azure/Neon release
+> assets are present, but provisioning and public acceptance are not evidence until the authenticated
+> deployment flow succeeds.
+
+---
+
+
 ## 🧠 Descripción
 
 **RL Simulation Control Platform** es una aplicación de software aplicada a Reinforcement Learning y simulación.
@@ -739,7 +812,11 @@ Sin responsabilidades mezcladas
 
 # 🚀 Estado actual
 
-Pendiente / por iniciar.
+Los tres sprints están entregados como **checkpoints técnicos versionados**. La rama release añade
+Azure Container Apps con escala total a cero, ACR cubierto por el grant inicial, Redis transitorio
+en la misma réplica, migración atómica y enlace seguro con Neon. El gate
+containerizado de Sprint 3 pasó el 2026-08-16; el despliegue público permanece explícitamente
+pendiente hasta ejecutar la aceptación cloud con una sesión Azure autenticada.
 
 ---
 
@@ -748,41 +825,49 @@ Pendiente / por iniciar.
 ## Sprint 1
 
 ```txt
-Definir Gridworld
-Crear reward map
-Crear state/action cards
-Crear episode runner
-Crear trajectory viewer
-Crear policy notes
-Crear visual report
-Documentar labs
-Actualizar README
+Gate containerizado completo aprobado
+queued → running → succeeded validado contra PostgreSQL y Redis reales
+Smoke real aprobado: 10 transiciones, 9.64 reward, 0 colisiones, goal reached
+Tag técnico de entrega creado antes de Sprint 2
+Capturas y certificación visual explícitamente no incluidas en este checkpoint
 ```
 
 ## Sprint 2
 
 ```txt
-Definir training log schema
-Crear reward chart
-Crear epsilon schedule viewer
-Crear loss viewer
-Crear action distribution
-Crear summary cards
-Crear dashboard DQN
-Documentar labs
+Training log schema versionado y migración 0002 implementados
+DQN real: MLP, replay buffer, epsilon-greedy y target network
+Reward chart y promedio móvil implementados
+Epsilon schedule y loss viewers implementados
+Action distribution y summary cards implementados
+Dashboard responsive con tablas accesibles implementado
+Smoke aprobado: 40 episodios ordenados y 400 métricas persistidas
+Gate containerizado completo aprobado el 2026-08-16
+Tag técnico creado; certificación visual independiente no archivada
 ```
 
 ## Sprint 3
 
 ```txt
-Crear transition examples
-Crear next-state prediction viewer
-Crear rollout sequence
-Calcular error por paso
-Documentar error acumulado
-Crear planning risk cards
-Crear rollout viewer
-Documentar labs
+Transition examples versionados en artefacto SHA-256
+Next-state prediction viewer implementado
+Rollout sequence de 11 pasos implementada
+Error por paso y acumulado persistidos
+Planning risk cards derivadas de evidencia durable
+Rollout viewer y tabla accesible implementados
+Labs y ADR documentados
+Gate containerizado y tres smokes aprobados el 2026-08-16
+Tag técnico creado; Azure y Neon quedan para la rama release
+```
+
+## Release Azure + Neon
+
+```txt
+Topología Bicep de gasto cero y cinco imágenes inmutables implementadas
+Migración Neon directa, transaccional y protegida por SHA-256 implementada
+API Neon pooled y Redis transitorio interno preparados mediante secretos
+Smoke remoto de los tres perfiles implementado
+Aprovisionamiento real y URLs públicas pendientes de sesión Azure autenticada
 ```
 
 ---
@@ -855,5 +940,5 @@ Path Software Engineer convierte esa profundidad en producto.
 
 **Jean Franck Loa Rojas**
 
-Path Software Engineer Builder  
+Path Software Engineer Builder
 Reinforcement Learning • Gridworld • DQN • World Models • Simulation • Dashboards • Agent Visualization • Product Architecture
