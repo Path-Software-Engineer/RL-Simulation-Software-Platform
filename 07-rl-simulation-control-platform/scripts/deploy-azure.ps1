@@ -6,14 +6,25 @@ param(
     [string]$ResourceGroup = "rg-p7-rl-simulation-demo",
     [string]$Location = "centralus",
     [string]$ImageTag = "",
+    [ValidatePattern('^ghcr\.io/[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?/[a-z0-9][a-z0-9._-]*$')]
+    [string]$ImagePrefix = "ghcr.io/path-software-engineer/rl-simulation-control-platform",
     [switch]$SkipFoundation,
     [switch]$SkipBuild,
-    [switch]$SkipSmoke
+    [switch]$SkipSmoke,
+    [switch]$RemoveLegacyAcr,
+    [ValidatePattern('^[a-z0-9]{5,50}$')]
+    [string]$LegacyRegistryName = "p7rlqmfakszb6jgus",
+    [ValidatePattern('^[a-zA-Z0-9_-]{3,128}$')]
+    [string]$LegacyPullIdentityName = "p7rl-pull"
 )
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $Root
+
+if ($RemoveLegacyAcr -and $SkipSmoke) {
+    throw "-RemoveLegacyAcr requires the full remote smoke; do not combine it with -SkipSmoke."
+}
 
 function Invoke-AzureCli {
     param([Parameter(Mandatory)][string[]]$Arguments)
@@ -53,6 +64,16 @@ function Push-DockerImage {
         )
         Start-Sleep -Seconds $DelaySeconds
     }
+}
+
+function Remove-TemporaryDirectory {
+    param([Parameter(Mandatory)][string]$Path)
+    $ResolvedTemp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+    $ResolvedPath = [IO.Path]::GetFullPath($Path)
+    if (-not $ResolvedPath.StartsWith($ResolvedTemp, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to remove a directory outside the system temporary directory: $ResolvedPath"
+    }
+    Remove-Item -LiteralPath $ResolvedPath -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 function Assert-NeonUrl {
@@ -96,6 +117,12 @@ if ([version]$VersionInfo.'azure-cli' -lt [version]"2.75.0") {
 
 $Account = Invoke-AzureCli @("account", "show", "--output", "json") | ConvertFrom-Json
 if (-not $Account.id) { throw "No active Azure subscription was found. Run 'az login'." }
+if ($Account.state -ne "Enabled") {
+    throw (
+        "Azure subscription '$($Account.name)' is '$($Account.state)'. " +
+        "Reactivate it before applying the GHCR migration; no cloud resources were changed."
+    )
+}
 
 $Dirty = @(git status --porcelain)
 if ($LASTEXITCODE -ne 0) { throw "Git status failed." }
@@ -109,6 +136,7 @@ if (-not $ImageTag) {
 if ($ImageTag -notmatch '^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$') {
     throw "ImageTag is not a valid OCI tag."
 }
+$ImagePrefix = $ImagePrefix.ToLowerInvariant()
 
 $DatabaseUrl = Read-RequiredSecret "NEON_DATABASE_URL"
 $DatabaseUrlDirect = Read-RequiredSecret "NEON_DATABASE_URL_DIRECT"
@@ -131,28 +159,36 @@ if ($OperatorToken.Length -lt 16 -or $OperatorToken.Length -gt 128 -or $Operator
 
 Write-Host "Azure release target: $($Account.name) / $Location" -ForegroundColor Cyan
 Write-Host "Git image tag: $ImageTag" -ForegroundColor Cyan
+Write-Host "Public GHCR prefix: $ImagePrefix" -ForegroundColor Cyan
 
 $FoundationSource = Get-Content -LiteralPath "infra/azure/foundation.bicep" -Raw
 $WorkloadSource = Get-Content -LiteralPath "infra/azure/workloads.bicep" -Raw
-if ($FoundationSource -match 'Microsoft\.(Cache|OperationalInsights)/') {
-    throw "Zero-cost guard failed: managed Redis and stored Log Analytics are forbidden."
+if ($FoundationSource -match 'Microsoft\.(Cache|OperationalInsights|ContainerRegistry|ManagedIdentity)/') {
+    throw "Zero-fixed-cost guard failed: ACR, managed identity, managed Redis and stored logs are forbidden."
 }
 if (
     $FoundationSource -notmatch "destination:\s*'azure-monitor'" -or
-    $FoundationSource -notmatch "name:\s*'Standard'"
+    $FoundationSource -notmatch "costProfile:\s*'consumption-scale-to-zero-ghcr'"
 ) {
-    throw "Zero-cost guard failed: logs must have no storage destination and ACR must use the documented Standard grant."
+    throw "Zero-fixed-cost guard failed: the foundation must use non-persisted logs and public GHCR."
 }
 if ($WorkloadSource -notmatch 'minReplicas:\s*0' -or $WorkloadSource -notmatch 'maxReplicas:\s*1') {
-    throw "Zero-cost guard failed: the public app must scale from zero to at most one replica."
+    throw "Zero-fixed-cost guard failed: the public app must scale from zero to at most one replica."
 }
 if ($WorkloadSource -match 'minReplicas:\s*[1-9]') {
-    throw "Zero-cost guard failed: an always-on Container Apps replica was declared."
+    throw "Zero-fixed-cost guard failed: an always-on Container Apps replica was declared."
 }
-Write-Host "OK - zero-cost source guard passed" -ForegroundColor Green
+if (
+    $WorkloadSource -match 'registries:\s*\[' -or
+    $WorkloadSource -match 'passwordSecretRef' -or
+    $WorkloadSource -match 'azurecr\.io'
+) {
+    throw "Zero-fixed-cost guard failed: workloads must pull public GHCR images anonymously."
+}
+Write-Host "OK - zero-fixed-cost public-GHCR source guard passed" -ForegroundColor Green
 
 Invoke-AzureCli @("config", "set", "extension.use_dynamic_install=yes_without_prompt", "--only-show-errors") | Out-Null
-foreach ($Namespace in @("Microsoft.App", "Microsoft.ContainerRegistry", "Microsoft.ManagedIdentity")) {
+foreach ($Namespace in @("Microsoft.App")) {
     Invoke-AzureCli @("provider", "register", "--namespace", $Namespace, "--wait", "--only-show-errors") | Out-Null
 }
 Invoke-AzureCli @("bicep", "install", "--only-show-errors") | Out-Null
@@ -163,14 +199,14 @@ Invoke-AzureCli @(
     "group", "create",
     "--name", $ResourceGroup,
     "--location", $Location,
-    "--tags", "project=rl-simulation-control-platform", "release=v1.0.0", "environment=demo", "managedBy=bicep",
+    "--tags", "project=rl-simulation-control-platform", "release=v1.0.1-ghcr", "environment=demo", "managedBy=bicep", "costProfile=consumption-scale-to-zero-ghcr",
     "--only-show-errors",
     "--output", "none"
 ) | Out-Null
 
 $FoundationDeployment = "$NamePrefix-foundation"
 if (-not $SkipFoundation) {
-    Write-Host "Provisioning the free-grant ACR and scale-to-zero Container Apps environment" -ForegroundColor Cyan
+    Write-Host "Provisioning the scale-to-zero Container Apps environment without ACR" -ForegroundColor Cyan
     $FoundationJson = Invoke-AzureCli @(
         "deployment", "group", "create",
         "--name", $FoundationDeployment,
@@ -191,13 +227,18 @@ if (-not $SkipFoundation) {
     )
 }
 $Foundation = $FoundationJson | ConvertFrom-Json
-$RegistryName = $Foundation.registryName.value
-$RegistryServer = $Foundation.registryLoginServer.value
 $EnvironmentName = $Foundation.environmentName.value
-$PullIdentityName = $Foundation.pullIdentityName.value
-if (-not $RegistryName -or -not $RegistryServer -or -not $EnvironmentName -or -not $PullIdentityName) {
-    throw "The foundation deployment did not return every required resource identity."
+if (-not $EnvironmentName) {
+    throw "The foundation deployment did not return the Container Apps environment name."
 }
+
+$Images = @(
+    @{ Name = "control-api"; Dockerfile = "infra/docker/control-api.Dockerfile" },
+    @{ Name = "rl-runner"; Dockerfile = "infra/docker/rl-runner.Dockerfile" },
+    @{ Name = "web"; Dockerfile = "infra/docker/web.Dockerfile" },
+    @{ Name = "migrate"; Dockerfile = "infra/docker/migrate.Dockerfile" },
+    @{ Name = "gateway"; Dockerfile = "infra/docker/gateway.Dockerfile" }
+)
 
 if (-not $SkipBuild) {
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
@@ -207,41 +248,73 @@ if (-not $SkipBuild) {
     if ($LASTEXITCODE -ne 0) {
         throw "Docker Desktop Linux engine is not ready."
     }
-    Invoke-AzureCli @(
-        "acr", "login",
-        "--name", $RegistryName,
-        "--only-show-errors"
-    ) | Out-Host
+    $RegistryUsername = Read-RequiredSecret "GHCR_USERNAME"
+    $RegistryPassword = Read-RequiredSecret "GHCR_TOKEN"
+    $RegistryServer = ($ImagePrefix -split '/', 2)[0]
+    $DockerConfigDirectory = Join-Path `
+        ([IO.Path]::GetTempPath()) `
+        "p7-ghcr-docker-$([guid]::NewGuid().ToString('N'))"
+    $PreviousDockerConfig = $env:DOCKER_CONFIG
+    New-Item -ItemType Directory -Path $DockerConfigDirectory | Out-Null
+    try {
+        $env:DOCKER_CONFIG = $DockerConfigDirectory
+        $RegistryPassword | docker login $RegistryServer --username $RegistryUsername --password-stdin
+        if ($LASTEXITCODE -ne 0) { throw "Temporary GHCR login failed." }
 
-    $Images = @(
-        @{ Name = "control-api"; Dockerfile = "infra/docker/control-api.Dockerfile" },
-        @{ Name = "rl-runner"; Dockerfile = "infra/docker/rl-runner.Dockerfile" },
-        @{ Name = "web"; Dockerfile = "infra/docker/web.Dockerfile" },
-        @{ Name = "migrate"; Dockerfile = "infra/docker/migrate.Dockerfile" },
-        @{ Name = "gateway"; Dockerfile = "infra/docker/gateway.Dockerfile" }
-    )
-    foreach ($Image in $Images) {
-        $FullImage = "$RegistryServer/p7/$($Image.Name):$ImageTag"
-        Write-Host "Building local image: $FullImage" -ForegroundColor Cyan
-        docker build `
-            --platform linux/amd64 `
-            --file $Image.Dockerfile `
-            --tag $FullImage `
-            .
-        if ($LASTEXITCODE -ne 0) {
-            throw "Local Docker build failed for p7/$($Image.Name)."
+        foreach ($Image in $Images) {
+            $FullImage = "$ImagePrefix-$($Image.Name):$ImageTag"
+            Write-Host "Building local image: $FullImage" -ForegroundColor Cyan
+            docker build `
+                --platform linux/amd64 `
+                --file $Image.Dockerfile `
+                --tag $FullImage `
+                .
+            if ($LASTEXITCODE -ne 0) {
+                throw "Local Docker build failed for $($Image.Name)."
+            }
+            Write-Host "Pushing immutable image: $FullImage" -ForegroundColor Cyan
+            Push-DockerImage -Image $FullImage
         }
-        Write-Host "Pushing immutable image: $FullImage" -ForegroundColor Cyan
-        Push-DockerImage -Image $FullImage
+    }
+    finally {
+        $env:DOCKER_CONFIG = $PreviousDockerConfig
+        Remove-TemporaryDirectory -Path $DockerConfigDirectory
+        $RegistryPassword = $null
     }
 }
+
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+    throw "Docker is required to verify anonymous access to the public GHCR images."
+}
+$AnonymousDockerConfig = Join-Path `
+    ([IO.Path]::GetTempPath()) `
+    "p7-ghcr-anonymous-$([guid]::NewGuid().ToString('N'))"
+$PreviousDockerConfig = $env:DOCKER_CONFIG
+New-Item -ItemType Directory -Path $AnonymousDockerConfig | Out-Null
+try {
+    $env:DOCKER_CONFIG = $AnonymousDockerConfig
+    foreach ($Image in $Images) {
+        $FullImage = "$ImagePrefix-$($Image.Name):$ImageTag"
+        docker manifest inspect $FullImage *> $null
+        if ($LASTEXITCODE -ne 0) {
+            throw (
+                "Public GHCR verification failed for $FullImage. Publish the image and set the " +
+                "package visibility to Public before changing Azure."
+            )
+        }
+    }
+}
+finally {
+    $env:DOCKER_CONFIG = $PreviousDockerConfig
+    Remove-TemporaryDirectory -Path $AnonymousDockerConfig
+}
+Write-Host "OK - all five immutable GHCR images allow anonymous pulls" -ForegroundColor Green
 
 Write-Host "Deploying Container Apps workloads" -ForegroundColor Cyan
 $env:AZURE_RELEASE_LOCATION = $Location
 $env:AZURE_RELEASE_NAME_PREFIX = $NamePrefix
-$env:AZURE_RELEASE_REGISTRY_NAME = $RegistryName
+$env:AZURE_RELEASE_IMAGE_PREFIX = $ImagePrefix
 $env:AZURE_RELEASE_ENVIRONMENT_NAME = $EnvironmentName
-$env:AZURE_RELEASE_PULL_IDENTITY_NAME = $PullIdentityName
 $env:AZURE_RELEASE_IMAGE_TAG = $ImageTag
 try {
     $WorkloadsJson = Invoke-AzureCli @(
@@ -257,9 +330,8 @@ try {
 finally {
     Remove-Item Env:AZURE_RELEASE_LOCATION -ErrorAction SilentlyContinue
     Remove-Item Env:AZURE_RELEASE_NAME_PREFIX -ErrorAction SilentlyContinue
-    Remove-Item Env:AZURE_RELEASE_REGISTRY_NAME -ErrorAction SilentlyContinue
+    Remove-Item Env:AZURE_RELEASE_IMAGE_PREFIX -ErrorAction SilentlyContinue
     Remove-Item Env:AZURE_RELEASE_ENVIRONMENT_NAME -ErrorAction SilentlyContinue
-    Remove-Item Env:AZURE_RELEASE_PULL_IDENTITY_NAME -ErrorAction SilentlyContinue
     Remove-Item Env:AZURE_RELEASE_IMAGE_TAG -ErrorAction SilentlyContinue
 }
 $Workloads = $WorkloadsJson | ConvertFrom-Json
@@ -281,7 +353,7 @@ $ScaleJson = Invoke-AzureCli @(
 )
 $Scale = $ScaleJson | ConvertFrom-Json
 if ($Scale.min -ne 0 -or $Scale.max -ne 1) {
-    throw "Zero-cost guard failed after deployment: Container Apps scale is not 0..1."
+    throw "Zero-fixed-cost guard failed after deployment: Container Apps scale is not 0..1."
 }
 $ForbiddenResources = Invoke-AzureCli @(
     "resource", "list",
@@ -291,9 +363,9 @@ $ForbiddenResources = Invoke-AzureCli @(
     "--only-show-errors"
 )
 if (-not [string]::IsNullOrWhiteSpace($ForbiddenResources)) {
-    throw "Zero-cost guard failed after deployment: a forbidden billable resource exists."
+    throw "Zero-fixed-cost guard failed after deployment: a forbidden billable resource exists."
 }
-Write-Host "OK - deployed resource guard passed (scale 0..1, no Managed Redis or Log Analytics)" -ForegroundColor Green
+Write-Host "OK - deployed resource guard passed (public GHCR, scale 0..1, no stored logs)" -ForegroundColor Green
 
 Write-Host "Applying versioned migrations to Neon" -ForegroundColor Cyan
 $ExecutionName = (
@@ -335,11 +407,117 @@ if (-not $SkipSmoke) {
         -OperatorToken $OperatorToken
 }
 
+if ($RemoveLegacyAcr) {
+    $PlatformImages = Invoke-AzureCli @(
+        "containerapp", "show",
+        "--name", $AppName,
+        "--resource-group", $ResourceGroup,
+        "--query", "properties.template.containers[].image",
+        "--output", "tsv",
+        "--only-show-errors"
+    )
+    $MigrationImages = Invoke-AzureCli @(
+        "containerapp", "job", "show",
+        "--name", $MigrationJobName,
+        "--resource-group", $ResourceGroup,
+        "--query", "properties.template.containers[].image",
+        "--output", "tsv",
+        "--only-show-errors"
+    )
+    $LiveImages = @($PlatformImages, $MigrationImages) -join "`n"
+    $PlatformRegistryServers = Invoke-AzureCli @(
+        "containerapp", "show",
+        "--name", $AppName,
+        "--resource-group", $ResourceGroup,
+        "--query", "properties.configuration.registries[].server",
+        "--output", "tsv",
+        "--only-show-errors"
+    )
+    $MigrationRegistryServers = Invoke-AzureCli @(
+        "containerapp", "job", "show",
+        "--name", $MigrationJobName,
+        "--resource-group", $ResourceGroup,
+        "--query", "properties.configuration.registries[].server",
+        "--output", "tsv",
+        "--only-show-errors"
+    )
+    $LiveRegistryServers = @($PlatformRegistryServers, $MigrationRegistryServers) -join "`n"
+    if ($LiveImages -match '(?i)\.azurecr\.io/') {
+        throw "Legacy ACR removal refused: a deployed workload still references azurecr.io."
+    }
+    if ($LiveRegistryServers -match '(?i)\.azurecr\.io$') {
+        throw "Legacy ACR removal refused: deployed registry authentication still references ACR."
+    }
+    foreach ($Image in $Images) {
+        if ($LiveImages -notmatch [regex]::Escape("$ImagePrefix-$($Image.Name):$ImageTag")) {
+            throw "Legacy ACR removal refused: deployed image identity is incomplete for $($Image.Name)."
+        }
+    }
+
+    $LegacyRegistryId = (
+        Invoke-AzureCli @(
+            "acr", "show",
+            "--name", $LegacyRegistryName,
+            "--resource-group", $ResourceGroup,
+            "--query", "id",
+            "--output", "tsv",
+            "--only-show-errors"
+        )
+    ).Trim()
+    $ExpectedRegistryId = (
+        "/subscriptions/$($Account.id)/resourceGroups/$ResourceGroup/" +
+        "providers/Microsoft.ContainerRegistry/registries/$LegacyRegistryName"
+    )
+    if ($LegacyRegistryId -ne $ExpectedRegistryId) {
+        throw "Legacy ACR removal refused: resolved registry ID does not match the exact expected target."
+    }
+
+    Write-Host "Removing verified legacy ACR: $LegacyRegistryId" -ForegroundColor Yellow
+    Invoke-AzureCli @(
+        "acr", "delete",
+        "--name", $LegacyRegistryName,
+        "--resource-group", $ResourceGroup,
+        "--yes",
+        "--only-show-errors"
+    ) | Out-Null
+    $RemainingRegistry = & az acr show `
+        --name $LegacyRegistryName `
+        --resource-group $ResourceGroup `
+        --query id `
+        --output tsv `
+        --only-show-errors 2>$null
+    if ($LASTEXITCODE -eq 0 -or $RemainingRegistry) {
+        throw "Legacy ACR deletion did not converge; the registry still resolves."
+    }
+
+    & az identity show `
+        --name $LegacyPullIdentityName `
+        --resource-group $ResourceGroup `
+        --output none `
+        --only-show-errors 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Invoke-AzureCli @(
+            "identity", "delete",
+            "--name", $LegacyPullIdentityName,
+            "--resource-group", $ResourceGroup,
+            "--only-show-errors"
+        ) | Out-Null
+    }
+    Write-Host "OK - legacy ACR and obsolete pull identity removed" -ForegroundColor Green
+}
+else {
+    Write-Warning (
+        "Legacy ACR '$LegacyRegistryName' remains present. After GHCR acceptance, rerun with " +
+        "-SkipBuild -RemoveLegacyAcr to remove its fixed daily charge."
+    )
+}
+
 Write-Host "OK - Azure + Neon release deployment passed" -ForegroundColor Green
 Write-Host "Web:     $WebUrl"
 Write-Host "API:     $ApiUrl"
 Write-Host "OpenAPI: $ApiUrl/openapi.json"
 Write-Host "Swagger: $ApiUrl/docs/"
+Write-Host "Images:  $ImagePrefix-*:$ImageTag"
 
 $DatabaseUrl = $null
 $DatabaseUrlDirect = $null

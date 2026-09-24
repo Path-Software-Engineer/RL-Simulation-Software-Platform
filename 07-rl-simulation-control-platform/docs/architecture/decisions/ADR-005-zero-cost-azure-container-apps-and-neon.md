@@ -1,6 +1,6 @@
 # ADR-005: Zero-cost Azure Container Apps and Neon release boundary
 
-- **Status:** Accepted for release candidate
+- **Status:** Superseded by ADR-006 for registry hosting
 - **Date:** 2026-08-16
 
 ## Context
@@ -61,3 +61,6 @@ only after the Job succeeds.
 - Cold starts are expected after scale-to-zero and are acceptable for a portfolio demonstration.
 - No stored Azure application logs or Redis durability are claimed for this zero-cost profile.
 - A clean Git checkout and an authenticated Azure CLI are required for a traceable release.
+
+The Container Apps, Neon and transient-Redis decisions remain active. ADR-006 replaces only the
+ACR Standard and managed-identity image-pull decision with public GHCR images.

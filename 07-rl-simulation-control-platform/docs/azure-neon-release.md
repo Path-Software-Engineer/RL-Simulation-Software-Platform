@@ -1,8 +1,8 @@
-# Zero-cost Azure + Neon release guide
+# Zero-fixed-cost Azure + Neon release guide
 
 ## Status and evidence boundary
 
-The repository contains a zero-cost portfolio topology and automated acceptance flow. It does not
+The repository contains a zero-fixed-cost portfolio topology and automated acceptance flow. It does not
 claim a live deployment until `scripts/deploy-azure.ps1` reports the public Web, API and OpenAPI
 URLs after all three remote smokes pass.
 
@@ -19,7 +19,7 @@ Browser --HTTPS/WSS--> Azure Container Apps Consumption (min 0, max 1)
                            +--> Python runner ----+
 
 Manual migration Job --------------------> Neon Free direct endpoint
-Azure Container Registry --identity------> immutable application images
+Public GitHub Container Registry --------> immutable application images
 ```
 
 All runtime containers share one replica and scale to zero together. Redis contains transient
@@ -30,8 +30,8 @@ intentionally absent. The resource group defaults to `rg-p7-rl-simulation-demo` 
 
 - Container Apps uses Consumption with `minReplicas: 0` and `maxReplicas: 1`. Azure documents no
   usage charge while the app is at zero and includes a monthly consumption grant.
-- ACR uses Standard because new Azure accounts currently include one Standard registry for 12
-  months. Delete the resource group before that grant expires.
+- Five public GHCR packages hold immutable commit-tagged images. Azure pulls them anonymously, so
+  the deployment has no dedicated registry resource, registry secret or fixed registry charge.
 - Application logs use the `azure-monitor` control-plane destination without any diagnostic
   setting, storage target or Log Analytics workspace, so no application logs are persisted.
 - Neon must remain on its Free plan with autosuspend enabled.
@@ -48,7 +48,9 @@ protection must still be checked before deployment. Budget alerts notify but do 
 3. Copy both connection strings: pooled for the API and direct for migrations. Both must use TLS
    and `channel_binding=require`.
 4. Install Azure CLI 2.75.0 or newer and authenticate with `az login`.
-5. Use a clean Git checkout on the release branch. Deployment refuses dirty worktrees so every
+5. Publish the five images through `.github/workflows/publish-p7-ghcr.yml` and change each package
+   visibility to Public. GitHub does not make a newly published package public automatically.
+6. Use a clean Git checkout on the release branch. Deployment refuses dirty worktrees so every
    image tag identifies an exact commit.
 
 For Windows without `winget` or administrator rights:
@@ -79,6 +81,17 @@ $env:OPERATOR_TOKEN = [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToStri
 
 Never paste these values into chat, commit them or store them in `.env`.
 
+Publish the exact clean commit through GitHub Actions:
+
+```powershell
+gh workflow run publish-p7-ghcr.yml --ref <release-branch>
+gh run watch --exit-status
+```
+
+New GHCR packages start as Private. In the GitHub organization, open each of the five package
+settings and change **Package settings → Change visibility → Public**. This is irreversible; verify
+the package names listed in ADR-006 before confirming.
+
 ## Deploy
 
 ```powershell
@@ -89,12 +102,23 @@ az account show --output table
 ```
 
 The script validates the CLI, subscription, clean Git state and secret shapes; compiles Bicep;
-provisions the zero-cost foundation; builds five immutable Linux images with local Docker and pushes
-them to ACR without ACR Tasks, using resumable retries for transient registry timeouts; applies the
+provisions the scale-to-zero foundation without ACR; verifies that all five immutable GHCR images
+allow anonymous pulls; applies the
 checksum-protected Neon migrations; and validates public HTTPS/WSS plus all three real product
 profiles. The migration image uses the compact PostgreSQL 17 client; TimescaleDB runs in Neon, not
 inside that release job. The schema deliberately uses only Neon's Timescale Apache feature set;
 hourly aggregation and retention remain portable PostgreSQL objects.
+
+The recommended migration from the legacy ACR reuses workflow-published images and removes the
+exact old registry only after the public application and all three remote smokes pass:
+
+```powershell
+.\scripts\deploy-azure.ps1 -SkipBuild -RemoveLegacyAcr
+```
+
+For an emergency local publication instead of GitHub Actions, omit `-SkipBuild` and set
+process-scoped `GHCR_USERNAME` plus a classic `GHCR_TOKEN` with `write:packages`. The script uses a
+temporary Docker configuration and removes it after publication.
 
 Successful output contains only public URLs and non-secret evidence:
 
@@ -127,18 +151,20 @@ az resource list --resource-group rg-p7-rl-simulation-demo `
 az containerapp show --name p7rl-platform `
     --resource-group rg-p7-rl-simulation-demo `
     --query "properties.template.scale.{min:minReplicas,max:maxReplicas}" --output table
+az acr list --resource-group rg-p7-rl-simulation-demo --output table
 ```
 
 Acceptance requires no `Microsoft.Cache`, `Microsoft.OperationalInsights`, dedicated profile or
-other unlisted resource, and the scale output must be `0 / 1`.
+other unlisted resource, the scale output must be `0 / 1`, and the legacy ACR list must be empty.
 
 ## Cost shutdown
 
-Deleting the resource group removes the Azure release and registry images. It does not delete the
+Deleting the resource group removes the Azure release but does not delete GHCR packages or the
 Neon project. Run this only when the public demo is intentionally retired:
 
 ```powershell
 az group delete --name rg-p7-rl-simulation-demo
 ```
 
-The destructive command is deliberately not included in automation.
+Full resource-group deletion is deliberately not included in automation. The narrower legacy ACR
+deletion is available only behind `-RemoveLegacyAcr`, after image-reference and remote-smoke checks.

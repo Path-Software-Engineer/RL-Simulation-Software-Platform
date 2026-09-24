@@ -25,10 +25,10 @@ Sprint 1, **Gridworld Agent Visualizer**, is fixed at
   states, per-step Manhattan error, accumulated error and risk metrics persisted end to end.
 - A responsive next-state comparison, horizontal rollout inspector, exact table, error chart and
   planning-risk cards.
-- One scale-to-zero Azure Container App, free-grant ACR and managed-identity image pulls.
+- One scale-to-zero Azure Container App pulling five public immutable GHCR images anonymously.
 - A transient same-replica Redis Streams transport and Neon PostgreSQL with distinct pooled runtime
   and direct migration connections; no Azure Managed Redis or stored Log Analytics.
-- An atomic migration Job, immutable ACR builds and a public three-profile release smoke.
+- An atomic migration Job, immutable GHCR builds and a public three-profile release smoke.
 
 The registered deterministic Q-Learning oracle reaches the goal in **10 transitions**, with
 **0 collisions** and **9.64 total reward**. This validates the controlled teaching fixture only;
@@ -813,7 +813,7 @@ Sin responsabilidades mezcladas
 # 🚀 Estado actual
 
 Los tres sprints están entregados como **checkpoints técnicos versionados**. La rama release añade
-Azure Container Apps con escala total a cero, ACR cubierto por el grant inicial, Redis transitorio
+Azure Container Apps con escala total a cero, imágenes públicas en GHCR, Redis transitorio
 en la misma réplica, migración atómica y enlace seguro con Neon. El gate
 containerizado de Sprint 3 pasó el 2026-08-16; el despliegue público permanece explícitamente
 pendiente hasta ejecutar la aceptación cloud con una sesión Azure autenticada.
@@ -863,7 +863,7 @@ Tag técnico creado; Azure y Neon quedan para la rama release
 ## Release Azure + Neon
 
 ```txt
-Topología Bicep de gasto cero y cinco imágenes inmutables implementadas
+Topología Bicep sin registro Azure de costo fijo y cinco imágenes GHCR inmutables implementadas
 Migración Neon directa, transaccional y protegida por SHA-256 implementada
 API Neon pooled y Redis transitorio interno preparados mediante secretos
 Smoke remoto de los tres perfiles implementado

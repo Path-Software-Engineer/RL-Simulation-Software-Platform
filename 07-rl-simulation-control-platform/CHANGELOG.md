@@ -4,13 +4,19 @@
 
 ### Added
 
-- Reproducible zero-cost Azure foundation with free-grant ACR, managed identity, no stored logs and
-  a complete Container Apps replica that scales to zero.
+- Reproducible zero-fixed-cost Azure foundation with public GHCR images, no Azure registry, no
+  stored logs and a complete Container Apps replica that scales to zero.
 - Same-origin Caddy gateway plus Nuxt, Go, Python and transient Redis sidecars in one bounded demo.
 - Atomic, SHA-256-protected Container Apps migration Job using a direct Neon endpoint.
 - Clean-checkout deployment orchestration and public HTTPS/WSS plus three-profile cloud smoke.
 - Local gate execution of the release migration image twice to prove schema-ledger idempotency.
 - Pinned, no-admin Azure CLI bootstrap for Windows accounts without `winget`.
+- GitHub Actions publication of five immutable, provenance-bearing Project 07 images.
+
+### Changed
+
+- Superseded the time-limited ACR Standard grant with public anonymous GHCR pulls.
+- Added a guarded post-acceptance cleanup path for the exact legacy ACR and pull identity.
 
 ### Evidence boundary
 
