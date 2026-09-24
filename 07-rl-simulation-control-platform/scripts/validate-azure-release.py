@@ -28,6 +28,7 @@ def main() -> None:
     gateway_image = read("infra/docker/gateway.Dockerfile")
     gateway_config = read("infra/azure/Caddyfile")
     deploy = read("scripts/deploy-azure.ps1")
+    ghcr_workflow = read("../.github/workflows/publish-p7-ghcr.yml")
     cli_installer = read("scripts/install-azure-cli-current-user.ps1")
     smoke = read("scripts/smoke-test-release.ps1")
     compose = read("docker-compose.yml")
@@ -36,30 +37,30 @@ def main() -> None:
         foundation,
         (
             "Microsoft.App/managedEnvironments@",
-            "Microsoft.ContainerRegistry/registries@",
-            "Microsoft.ManagedIdentity/userAssignedIdentities@",
-            "Microsoft.Authorization/roleAssignments@",
             "destination: 'azure-monitor'",
-            "name: 'Standard'",
-            "adminUserEnabled: false",
-            "costProfile: 'free-grant-scale-to-zero'",
+            "costProfile: 'consumption-scale-to-zero-ghcr'",
         ),
         "Azure foundation",
     )
     forbidden_foundation = (
         "Microsoft.Cache/",
         "Microsoft.OperationalInsights/",
+        "Microsoft.ContainerRegistry/",
+        "Microsoft.ManagedIdentity/",
+        "Microsoft.Authorization/roleAssignments@",
         "Balanced_B0",
         "name: 'Basic'",
+        "name: 'Standard'",
         "log-analytics",
     )
     if any(token in foundation for token in forbidden_foundation):
-        raise SystemExit("Azure foundation contains a billable or non-free-grant service")
+        raise SystemExit("Azure foundation contains a fixed-cost registry or forbidden service")
     require(
         workloads,
         (
             "Microsoft.App/jobs@",
             "Microsoft.App/containerApps@",
+            "param imagePrefix string",
             "param databaseUrl string",
             "param databaseUrlDirect string",
             "param operatorToken string",
@@ -72,6 +73,11 @@ def main() -> None:
             "minReplicas: 0",
             "maxReplicas: 1",
             "targetPort: 8088",
+            "image: '${imagePrefix}-gateway:${imageTag}'",
+            "image: '${imagePrefix}-control-api:${imageTag}'",
+            "image: '${imagePrefix}-rl-runner:${imageTag}'",
+            "image: '${imagePrefix}-web:${imageTag}'",
+            "image: '${imagePrefix}-migrate:${imageTag}'",
         ),
         "Azure workloads",
     )
@@ -85,10 +91,20 @@ def main() -> None:
         raise SystemExit("a secure workload parameter must never be emitted as a Bicep output")
     if "minReplicas: 1" in workloads or "Microsoft.Cache/" in workloads:
         raise SystemExit("Azure workloads must scale to zero and must not provision managed Redis")
+    forbidden_registry_auth = (
+        "registries: [",
+        "passwordSecretRef",
+        "Microsoft.ContainerRegistry/",
+        "Microsoft.ManagedIdentity/",
+        "azurecr.io",
+    )
+    if any(token in workloads for token in forbidden_registry_auth):
+        raise SystemExit("Azure workloads must pull public GHCR images anonymously")
     require(
         workload_params,
         (
             "using './workloads.bicep'",
+            "readEnvironmentVariable('AZURE_RELEASE_IMAGE_PREFIX')",
             "readEnvironmentVariable('NEON_DATABASE_URL')",
             "readEnvironmentVariable('NEON_DATABASE_URL_DIRECT')",
             "readEnvironmentVariable('OPERATOR_TOKEN')",
@@ -99,13 +115,13 @@ def main() -> None:
     require(
         migration,
         (
-            'set -eu',
-            'DATABASE_URL_DIRECT',
-            'release_migration_checksums',
-            'sha256sum',
-            'ON_ERROR_STOP=1',
-            'Already applied:',
-            'Migration checksum mismatch:',
+            "set -eu",
+            "DATABASE_URL_DIRECT",
+            "release_migration_checksums",
+            "sha256sum",
+            "ON_ERROR_STOP=1",
+            "Already applied:",
+            "Migration checksum mismatch:",
             "WHERE version = :'version';",
             "VALUES (:'version', :'digest')",
             "<<'SQL'",
@@ -154,7 +170,7 @@ def main() -> None:
             "FROM postgres:17-alpine",
             "COPY database/migrations/ /migrations/",
             "USER postgres",
-            "ENTRYPOINT [\"/usr/local/bin/run-migrations\"]",
+            'ENTRYPOINT ["/usr/local/bin/run-migrations"]',
         ),
         "migration image",
     )
@@ -184,17 +200,25 @@ def main() -> None:
             'Read-RequiredSecret "NEON_DATABASE_URL"',
             'Read-RequiredSecret "NEON_DATABASE_URL_DIRECT"',
             'Read-RequiredSecret "OPERATOR_TOKEN"',
-            '"acr", "login"',
+            'Read-RequiredSecret "GHCR_USERNAME"',
+            'Read-RequiredSecret "GHCR_TOKEN"',
             "function Push-DockerImage",
+            "function Remove-TemporaryDirectory",
             "MaxAttempts = 4",
+            "docker login",
             "docker build",
             "docker push",
+            "docker manifest inspect",
             "--platform linux/amd64",
             '"containerapp", "job", "start"',
             'Dockerfile = "infra/docker/gateway.Dockerfile"',
             '"--parameters", "infra/azure/workloads.bicepparam"',
-            'smoke-test-release.ps1',
-            'git status --porcelain',
+            "smoke-test-release.ps1",
+            "git status --porcelain",
+            "$RemoveLegacyAcr",
+            '"acr", "delete"',
+            "Legacy ACR removal refused",
+            "AZURE_RELEASE_IMAGE_PREFIX",
         ),
         "Azure deployment script",
     )
@@ -205,8 +229,28 @@ def main() -> None:
     )
     if any(token in deploy for token in forbidden_secret_arguments):
         raise SystemExit("deployment secrets must not be passed through Azure CLI arguments")
-    if re.search(r'"acr",\s*"build"', deploy):
-        raise SystemExit("free-subscription releases must not depend on blocked ACR Tasks")
+    if re.search(r'"acr",\s*"(build|login)"', deploy):
+        raise SystemExit("public-GHCR releases must not build or authenticate through ACR")
+    require(
+        ghcr_workflow,
+        (
+            "permissions:",
+            "packages: write",
+            "workflow_dispatch:",
+            "ghcr.io/path-software-engineer/rl-simulation-control-platform",
+            "control-api",
+            "rl-runner",
+            "web",
+            "migrate",
+            "gateway",
+            "docker/build-push-action@",
+            "org.opencontainers.image.source=",
+            "${GITHUB_SHA::12}",
+        ),
+        "immutable GHCR publication workflow",
+    )
+    if "latest" in ghcr_workflow:
+        raise SystemExit("GHCR publication must not create a mutable latest tag")
     require(
         cli_installer,
         (
@@ -214,7 +258,7 @@ def main() -> None:
             "https://azcliprod.blob.core.windows.net/zip/azure-cli-$Version-x64.zip",
             "Invoke-WebRequest",
             "Expand-Archive",
-            '[Environment]::SetEnvironmentVariable(',
+            "[Environment]::SetEnvironmentVariable(",
             '"Path",',
             '"User"',
             "az.cmd",
@@ -255,6 +299,7 @@ def main() -> None:
         gateway_image,
         gateway_config,
         deploy,
+        ghcr_workflow,
         cli_installer,
         smoke,
     )
@@ -264,8 +309,8 @@ def main() -> None:
         raise SystemExit("the deployment script must not print release credentials")
 
     print(
-        "OK - zero-cost scale-to-zero Azure Container Apps and Neon assets are "
-        "structurally complete"
+        "OK - zero-fixed-cost public-GHCR, scale-to-zero Azure Container Apps "
+        "and Neon assets are structurally complete"
     )
 
 

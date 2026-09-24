@@ -35,14 +35,16 @@
 ## Deployment profiles
 
 The three sprint checkpoints use local Docker Compose and create no public cloud resource. The
-release profile maps the same boundaries to one HTTP-activated Azure Container App and ACR, with
+release profile maps the same boundaries to one HTTP-activated Azure Container App, with public
+immutable GHCR images and
 Neon PostgreSQL/TimescaleDB as durable truth. Caddy, Nuxt, Go, Python and a transient Redis sidecar
 share one replica that scales completely to zero; migrations execute as a manual,
 checksum-protected Container Apps Job.
 
 The Go API uses Neon's pooled connection while migrations use the direct endpoint. Redis remains a
 stream transport, never the durable source of truth. See
-`ADR-005-zero-cost-azure-container-apps-and-neon.md` and `docs/azure-neon-release.md`.
+`ADR-005-zero-cost-azure-container-apps-and-neon.md`,
+`ADR-006-public-ghcr-release-images.md` and `docs/azure-neon-release.md`.
 
 ## Sprint 2 DQN flow
 
