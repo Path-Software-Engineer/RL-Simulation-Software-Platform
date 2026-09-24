@@ -5,14 +5,11 @@ param location string = resourceGroup().location
 @maxLength(18)
 param namePrefix string = 'p7rl'
 
-@description('Existing Azure Container Registry name.')
-param registryName string
+@description('Immutable public GHCR image prefix without component suffix or tag.')
+param imagePrefix string = 'ghcr.io/path-software-engineer/rl-simulation-control-platform'
 
 @description('Existing Container Apps environment name.')
 param environmentName string
-
-@description('Existing user-assigned identity with AcrPull on the registry.')
-param pullIdentityName string
 
 @description('Immutable image tag, normally the Git commit SHA.')
 param imageTag string
@@ -34,9 +31,9 @@ param operatorToken string
 @description('Resource tags applied to the release workloads.')
 param tags object = {
   project: 'rl-simulation-control-platform'
-  release: 'v1.0.0'
+  release: 'v1.0.1-ghcr'
   environment: 'demo'
-  costProfile: 'free-grant-scale-to-zero'
+  costProfile: 'consumption-scale-to-zero-ghcr'
   managedBy: 'bicep'
 }
 
@@ -47,15 +44,6 @@ resource environment 'Microsoft.App/managedEnvironments@2024-03-01' existing = {
   name: environmentName
 }
 
-resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: registryName
-}
-
-resource pullIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  name: pullIdentityName
-}
-
-var registryServer = registry.properties.loginServer
 var appFqdn = '${appName}.${environment.properties.defaultDomain}'
 var publicBaseUrl = 'https://${appFqdn}'
 
@@ -63,12 +51,6 @@ resource migrationJob 'Microsoft.App/jobs@2024-03-01' = {
   name: migrationJobName
   location: location
   tags: tags
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${pullIdentity.id}': {}
-    }
-  }
   properties: {
     environmentId: environment.id
     configuration: {
@@ -79,12 +61,6 @@ resource migrationJob 'Microsoft.App/jobs@2024-03-01' = {
         parallelism: 1
         replicaCompletionCount: 1
       }
-      registries: [
-        {
-          server: registryServer
-          identity: pullIdentity.id
-        }
-      ]
       secrets: [
         {
           name: 'database-url-direct'
@@ -96,7 +72,7 @@ resource migrationJob 'Microsoft.App/jobs@2024-03-01' = {
       containers: [
         {
           name: 'migrate'
-          image: '${registryServer}/p7/migrate:${imageTag}'
+          image: '${imagePrefix}-migrate:${imageTag}'
           env: [
             {
               name: 'DATABASE_URL_DIRECT'
@@ -119,12 +95,6 @@ resource platform 'Microsoft.App/containerApps@2024-03-01' = {
   name: appName
   location: location
   tags: tags
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${pullIdentity.id}': {}
-    }
-  }
   properties: {
     environmentId: environment.id
     configuration: {
@@ -135,12 +105,6 @@ resource platform 'Microsoft.App/containerApps@2024-03-01' = {
         targetPort: 8088
         transport: 'auto'
       }
-      registries: [
-        {
-          server: registryServer
-          identity: pullIdentity.id
-        }
-      ]
       secrets: [
         {
           name: 'database-url'
@@ -156,7 +120,7 @@ resource platform 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'gateway'
-          image: '${registryServer}/p7/gateway:${imageTag}'
+          image: '${imagePrefix}-gateway:${imageTag}'
           resources: {
             cpu: json('0.25')
             memory: '0.5Gi'
@@ -199,7 +163,7 @@ resource platform 'Microsoft.App/containerApps@2024-03-01' = {
         }
         {
           name: 'control-api'
-          image: '${registryServer}/p7/control-api:${imageTag}'
+          image: '${imagePrefix}-control-api:${imageTag}'
           env: [
             {
               name: 'HTTP_ADDRESS'
@@ -253,7 +217,7 @@ resource platform 'Microsoft.App/containerApps@2024-03-01' = {
         }
         {
           name: 'rl-runner'
-          image: '${registryServer}/p7/rl-runner:${imageTag}'
+          image: '${imagePrefix}-rl-runner:${imageTag}'
           env: [
             {
               name: 'REDIS_URL'
@@ -299,7 +263,7 @@ resource platform 'Microsoft.App/containerApps@2024-03-01' = {
         }
         {
           name: 'web'
-          image: '${registryServer}/p7/web:${imageTag}'
+          image: '${imagePrefix}-web:${imageTag}'
           env: [
             {
               name: 'NUXT_PUBLIC_API_BASE'
